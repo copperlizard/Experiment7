@@ -31,21 +31,34 @@ public class CameraController : MonoBehaviour
 	}
 	
 	// Update is called once per frame
-	void Update ()
+	void FixedUpdate ()
     {
         ChasePlayer();
 	}
 
     private void ChasePlayer ()
     {
-        transform.position = m_player.transform.position + m_boomVector;
-        transform.rotation = Quaternion.LookRotation((m_player.transform.position + m_lookOffset) - transform.position);
+        Vector3 tarPos = m_player.transform.position + m_player.transform.rotation * m_boomVector;
+        Vector3 lookTar = m_player.transform.position + m_lookOffset;
+        Vector3 checkSightLine = tarPos - lookTar;
+
+        RaycastHit hit;
+        if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.NameToLayer("Player")))
+        {
+            Debug.Log("camera view obstructed by " + hit.collider.gameObject.name + "!");
+
+            tarPos = hit.point;
+        }
+
+        transform.position = Vector3.Lerp(transform.position, tarPos, 0.1f);
+
+        transform.rotation = Quaternion.LookRotation(lookTar - transform.position); //change to account for player rotation
     }
 
     public void PanTilt (Vector2 move)
     {
         float pan = (move.x >= 0.0f)? move.x * m_panMax : move.x * m_panMin, tilt = (move.y >= 0.0f) ? move.y * m_tiltMax : move.y * m_tiltMin;
 
-        Debug.Log("pan == " + pan.ToString() + " ; tilt == " + tilt.ToString());
+        //Debug.Log("pan == " + pan.ToString() + " ; tilt == " + tilt.ToString());
     }
 }

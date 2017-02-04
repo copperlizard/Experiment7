@@ -29,8 +29,8 @@ public class CameraInput : MonoBehaviour
 
     private void GetInput()
     {
-        m_move.x = Input.GetAxis("Horizontal");
-        m_move.y = Input.GetAxis("Vertical");
+        m_move.x = Input.GetAxis("LookHorizontal");
+        m_move.y = Input.GetAxis("LookVertical");
 
         //Debug.Log("m_move == " + m_move.ToString());
     }
