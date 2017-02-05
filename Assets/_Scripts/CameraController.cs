@@ -12,7 +12,7 @@ public class CameraController : MonoBehaviour
 
     [SerializeField]
     [Range(-180.0f, 0.0f)]
-    private float m_tiltMin = -180.0f, m_panMin = -180.0f;
+    private float m_minFollowDist = 1.0f, m_tiltMin = -180.0f, m_panMin = -180.0f;
 
     [SerializeField]
     [Range(0.0f, 180.0f)]
@@ -39,20 +39,26 @@ public class CameraController : MonoBehaviour
     private void ChasePlayer ()
     {
         Vector3 tarPos = m_player.transform.position + m_player.transform.rotation * m_boomVector;
-        Vector3 lookTar = m_player.transform.position + m_lookOffset;
+        Vector3 lookTar = m_player.transform.position + m_player.transform.rotation * m_lookOffset;
         Vector3 checkSightLine = tarPos - lookTar;
 
+        // Too close
+        if (Vector3.Distance(tarPos, lookTar) < m_minFollowDist)
+        {
+            tarPos = lookTar + checkSightLine.normalized * m_minFollowDist;
+        }
+
+        // Obstructed
         RaycastHit hit;
         if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.NameToLayer("Player")))
         {
             Debug.Log("camera view obstructed by " + hit.collider.gameObject.name + "!");
 
             tarPos = hit.point;
-        }
+        }        
 
         transform.position = Vector3.Lerp(transform.position, tarPos, 0.1f);
-
-        transform.rotation = Quaternion.LookRotation(lookTar - transform.position); //change to account for player rotation
+        transform.rotation = Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up); 
     }
 
     public void PanTilt (Vector2 move)

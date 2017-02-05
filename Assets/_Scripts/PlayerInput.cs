@@ -26,8 +26,8 @@ public class PlayerInput : MonoBehaviour
 	}
 
     private void FixedUpdate()
-    {
-        m_playerController.Move(m_move);
+    {        
+        m_playerController.Move(m_move.normalized);
     }
 
     private void GetInput ()
