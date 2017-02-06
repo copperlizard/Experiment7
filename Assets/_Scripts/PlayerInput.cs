@@ -8,6 +8,8 @@ public class PlayerInput : MonoBehaviour
     private PlayerController m_playerController;
     private Vector2 m_move;
 
+    private float m_buttonCharge = 0.0f;
+
 	// Use this for initialization
 	void Start ()
     {
@@ -26,8 +28,8 @@ public class PlayerInput : MonoBehaviour
 	}
 
     private void FixedUpdate()
-    {        
-        m_playerController.Move(m_move.normalized);
+    {   
+        m_playerController.Move(m_move);
     }
 
     private void GetInput ()
@@ -35,6 +37,13 @@ public class PlayerInput : MonoBehaviour
         m_move.x = Input.GetAxis("Horizontal");
         m_move.y = Input.GetAxis("Vertical");
 
+        
+
         //Debug.Log("m_move == " + m_move.ToString());
+    }
+
+    private IEnumerator ButtonCharge (string btnName, float lerpRate)
+    {
+        yield return null;
     }
 }

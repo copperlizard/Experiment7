@@ -17,7 +17,7 @@ public class PlayerController : MonoBehaviour
     
     private RaycastHit m_groundAt;
 
-    private float m_turn = 0.0f;
+    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f;
 
     private bool m_grounded = true;
 
@@ -52,12 +52,18 @@ public class PlayerController : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
     {
-        float speed = m_playerRB.velocity.magnitude / m_maxSpeed;
-        m_playerAnimator.SetFloat("Speed", speed);
+        m_playerAnimator.SetFloat("Speed", m_speed / m_maxSpeed);
         m_playerAnimator.SetFloat("Turn", m_turn);
+        m_playerAnimator.SetFloat("Falling", m_playerRB.velocity.y);
+        m_playerAnimator.SetBool("Grounded", m_grounded);
 
-        m_playerAnimator.speed = 1.0f + Mathf.SmoothStep(0.75f, 1.0f, speed);
+        m_playerAnimator.speed = 1.0f + Mathf.SmoothStep(0.75f, 1.0f, m_speed);
 	}
+
+    public void SetJumpCharge (float charge)
+    {
+        m_jumpCharge = charge;
+    }
 
     private void GroundCheck ()
     {
@@ -85,7 +91,7 @@ public class PlayerController : MonoBehaviour
         Debug.DrawRay(m_groundAt.point, alignedForward, Color.blue);
 
         Quaternion alignedRot = Quaternion.LookRotation(alignedForward, m_groundAt.normal);
-        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 0.3f);
+        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 300.0f * Time.deltaTime);
 
         Vector3 toGround = m_groundAt.point - transform.position;       
         
@@ -100,10 +106,25 @@ public class PlayerController : MonoBehaviour
     public void Move (Vector2 move)
     {
         GroundCheck();
-        
+
+        move = move.normalized * Mathf.Min(1.0f, move.magnitude); // Make keyboard input look like joystick input (joystick unaffected)
+
+        m_turn = move.x;
+
+        m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude, 50.0f * Time.deltaTime);
+
+        Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
+        move3d = transform.rotation * move3d;
+
+        // Reverse        
+        if (Vector3.Dot(move3d, -transform.forward) > 0.45f)
+        {
+            m_speed = -m_speed;
+        }
+
         if (m_grounded)
         {
-            GroundMove(move);
+            GroundMove(move3d);
         }
         else
         {
@@ -111,48 +132,26 @@ public class PlayerController : MonoBehaviour
         }        
     }
 
-    private void GroundMove (Vector2 move)
+    private void GroundMove (Vector3 move)
     {
         if (m_playerRB.useGravity)
         {
             m_playerRB.useGravity = false;
         }
-
-        m_turn = move.x;
-
-        Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
-        //move3d = Quaternion.Euler(0.0f, m_camera.transform.rotation.eulerAngles.y, 0.0f) * move3d;
-        move3d = transform.rotation * move3d;
         
-        float speed = Mathf.SmoothStep(m_playerRB.velocity.magnitude, m_maxSpeed, 0.3f);
+        Vector3 vel = transform.forward * m_speed;
+
+        m_playerRB.velocity = vel;
         
-        // Reverse        
-        if (Vector3.Dot(move3d, -transform.forward) >= 0.45f)
-        {
-            speed = -speed;
-        }
-
-        Debug.Log("move3d == " + move3d.ToString() + " ; magnitude == " + move3d.magnitude.ToString());
-
-        Vector3 vel = transform.forward * move.magnitude * speed * Mathf.Abs(Vector3.Dot(move3d, transform.forward)); //fix turning here!!!
-
-        Debug.Log("vel == " + vel.ToString() + " ; speed == " + vel.magnitude.ToString());
-
-        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, vel, 0.3f);
-
-        //Debug.DrawLine(transform.position, transform.position + vel, Color.red);
-        //Debug.Log("m_playerRB.velocity == " + m_playerRB.velocity.ToString() + " ; speed == " + m_playerRB.velocity.magnitude.ToString());
-
-        if (move3d.magnitude < 0.05)
+        if (move.magnitude < 0.05)
         {
             return;
         }
         else
         {
-            Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d * ((speed >= 0.0f)?1.0f:-1.0f), transform.up).normalized, transform.up);
+            Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f)?1.0f:-1.0f), transform.up).normalized, transform.up);
 
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * Mathf.SmoothStep(0.15f, 1.0f, 1.0f - m_playerRB.velocity.magnitude / m_maxSpeed));
-            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * Mathf.Lerp(0.1f, 1.0f, 1.0f - m_playerRB.velocity.magnitude / m_maxSpeed));
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.85f * Mathf.SmoothStep(0.0f, 1.0f, m_speed - 0.1f)));
         }
     }
 
@@ -161,6 +160,26 @@ public class PlayerController : MonoBehaviour
         if (!m_playerRB.useGravity)
         {
             m_playerRB.useGravity = true;
+        }
+        
+        Vector3 tarForward = -Vector3.Cross(Vector3.Cross(transform.forward, Vector3.up), Vector3.up);
+
+        Debug.DrawRay(transform.position, tarForward, Color.green);
+
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(tarForward, Vector3.up), 0.5f);
+
+        Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
+        move3d = transform.rotation * move3d;
+
+        if (move3d.magnitude < 0.05)
+        {
+            return;
+        }
+        else
+        {
+            Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
+
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.85f * Mathf.SmoothStep(0.0f, 1.0f, m_playerRB.velocity.magnitude / m_maxSpeed)));
         }
     }
 

@@ -57,7 +57,7 @@ public class CameraController : MonoBehaviour
             tarPos = hit.point;
         }        
 
-        transform.position = Vector3.Lerp(transform.position, tarPos, 0.1f);
+        transform.position = Vector3.Lerp(transform.position, tarPos, 5.0f * Time.deltaTime);
         transform.rotation = Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up); 
     }
 
