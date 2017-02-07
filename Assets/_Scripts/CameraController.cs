@@ -1,11 +1,16 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityStandardAssets.ImageEffects;
 
 public class CameraController : MonoBehaviour
 {
     [SerializeField]
     private GameObject m_player;
+
+    private Rigidbody m_playerRB;
+
+    private MotionBlur m_motionBlur;
 
     [SerializeField]
     private Vector3 m_boomVector = new Vector3(0.0f, 2.5f, -5.0f), m_lookOffset = new Vector3(0.0f, 2.0f, 0.0f);
@@ -28,6 +33,12 @@ public class CameraController : MonoBehaviour
         {
             Debug.Log("m_player not assigned!");
         }
+        else
+        {
+            m_playerRB = m_player.GetComponent<Rigidbody>();
+        }
+
+        m_motionBlur = GetComponent<MotionBlur>();
 	}
 	
 	// Update is called once per frame
@@ -52,13 +63,15 @@ public class CameraController : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.NameToLayer("Player")))
         {
-            Debug.Log("camera view obstructed by " + hit.collider.gameObject.name + "!");
+            //Debug.Log("camera view obstructed by " + hit.collider.gameObject.name + "!");
 
             tarPos = hit.point;
         }        
 
         transform.position = Vector3.Lerp(transform.position, tarPos, 5.0f * Time.deltaTime);
-        transform.rotation = Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up); 
+        transform.rotation = Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up);
+
+        m_motionBlur.blurAmount = m_playerRB.velocity.magnitude / 60.0f;
     }
 
     public void PanTilt (Vector2 move)

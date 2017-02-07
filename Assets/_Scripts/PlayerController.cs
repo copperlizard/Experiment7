@@ -6,7 +6,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]
-    private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_groundCheckDist = 0.25f;
+    private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_groundCheckDist = 0.25f;
 
     private Animator m_playerAnimator;
 
@@ -19,7 +19,7 @@ public class PlayerController : MonoBehaviour
 
     private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f;
 
-    private bool m_grounded = true;
+    private bool m_grounded = true, m_jumping = false;
 
 	// Use this for initialization
 	void Start ()
@@ -55,6 +55,7 @@ public class PlayerController : MonoBehaviour
         m_playerAnimator.SetFloat("Speed", m_speed / m_maxSpeed);
         m_playerAnimator.SetFloat("Turn", m_turn);
         m_playerAnimator.SetFloat("Falling", m_playerRB.velocity.y);
+        m_playerAnimator.SetFloat("JumpCharge", m_jumpCharge);
         m_playerAnimator.SetBool("Grounded", m_grounded);
 
         m_playerAnimator.speed = 1.0f + Mathf.SmoothStep(0.75f, 1.0f, m_speed);
@@ -105,16 +106,27 @@ public class PlayerController : MonoBehaviour
 
     public void Move (Vector2 move)
     {
-        GroundCheck();
+        if (!m_jumping)
+        {
+            GroundCheck();
+        }       
 
         move = move.normalized * Mathf.Min(1.0f, move.magnitude); // Make keyboard input look like joystick input (joystick unaffected)
 
-        m_turn = move.x;
+        m_turn = move.x; // For animator
 
-        m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude, 50.0f * Time.deltaTime);
+        float tiltFactor = 1.0f;
 
         Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
         move3d = transform.rotation * move3d;
+
+        tiltFactor *= Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.8f, Mathf.Abs(Vector3.Dot(move3d, transform.forward))));
+
+        m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude * tiltFactor, 7.5f * Time.deltaTime);
+
+        //Debug.Log("m_speed == " + m_speed.ToString());
+
+        //Debug.Log(Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.8f, Mathf.Abs(Vector3.Dot(move3d, transform.forward)))).ToString());
 
         // Reverse        
         if (Vector3.Dot(move3d, -transform.forward) > 0.45f)
@@ -151,7 +163,7 @@ public class PlayerController : MonoBehaviour
         {
             Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f)?1.0f:-1.0f), transform.up).normalized, transform.up);
 
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.85f * Mathf.SmoothStep(0.0f, 1.0f, m_speed - 0.1f)));
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
         }
     }
 
@@ -185,7 +197,27 @@ public class PlayerController : MonoBehaviour
 
     public void Jump ()
     {
+        if (!m_grounded)
+        {
+            return;
+        }
 
+        m_grounded = false;
+        
+        StartCoroutine(Jumping());
+
+        float momentum = m_speed / m_maxSpeed;
+
+        Vector3 jumpV = Vector3.Lerp(transform.up, transform.up, momentum * 0.5f);
+        m_playerRB.velocity += jumpV * m_jumpSpeed;
+    }
+
+    private IEnumerator Jumping ()
+    {
+        m_jumping = true;
+        yield return new WaitForSeconds(0.1f);
+        m_jumping = false;
+        yield return null;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -194,5 +226,10 @@ public class PlayerController : MonoBehaviour
         {
             transform.position = Vector3.Lerp(transform.position, transform.position + collision.contacts[0].normal * 0.1f, 0.1f);
         }
+    }
+
+    public bool PlayerIsGrounded()
+    {
+        return m_grounded;
     }
 }

@@ -5,10 +5,15 @@ using UnityEngine;
 [RequireComponent(typeof(PlayerController))]
 public class PlayerInput : MonoBehaviour
 {
+    [SerializeField]
+    private float m_jumpChargeRate = 5.0f;
+
     private PlayerController m_playerController;
     private Vector2 m_move;
 
-    private float m_buttonCharge = 0.0f;
+    private float m_jumpCharge = 0.0f;
+
+    private bool m_jumpCharging = false, m_jump = false;
 
 	// Use this for initialization
 	void Start ()
@@ -30,6 +35,8 @@ public class PlayerInput : MonoBehaviour
     private void FixedUpdate()
     {   
         m_playerController.Move(m_move);
+
+        m_playerController.SetJumpCharge(m_jumpCharge);
     }
 
     private void GetInput ()
@@ -37,13 +44,30 @@ public class PlayerInput : MonoBehaviour
         m_move.x = Input.GetAxis("Horizontal");
         m_move.y = Input.GetAxis("Vertical");
 
-        
-
-        //Debug.Log("m_move == " + m_move.ToString());
+        if (Input.GetButton("Jump") && !m_jumpCharging)
+        {
+            StartCoroutine(JumpCharge());
+            m_jump = true;
+        }
+        else if (Input.GetButtonUp("Jump") && m_jump)
+        {
+            Debug.Log("jump!");
+            m_playerController.Jump();
+            m_jumpCharge = 0.0f;
+        }
     }
 
-    private IEnumerator ButtonCharge (string btnName, float lerpRate)
+    private IEnumerator JumpCharge ()
     {
+        m_jumpCharging = true;
+        do
+        {
+            m_jumpCharge = Mathf.Lerp(m_jumpCharge, 1.0f, m_jumpChargeRate * Time.deltaTime);
+            yield return null;
+        } while (Input.GetButton("Jump"));
+
+        m_jumpCharging = false;
+
         yield return null;
     }
 }
