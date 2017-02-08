@@ -6,7 +6,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]
-    private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_groundCheckDist = 0.25f;
+    private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_airDashSpeed = 30.0f, m_dashDuration = 1.0f, m_groundCheckDist = 0.25f, m_minFlightHeight = 1.0f;
 
     private Animator m_playerAnimator;
 
@@ -14,12 +14,14 @@ public class PlayerController : MonoBehaviour
     private CameraController m_cameraController;
 
     private Rigidbody m_playerRB;
+
+    private ParticleSystem m_dashParticles;    
     
     private RaycastHit m_groundAt;
 
-    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f;
+    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f;
 
-    private bool m_grounded = true, m_jumping = false;
+    private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false;
 
 	// Use this for initialization
 	void Start ()
@@ -47,15 +49,20 @@ public class PlayerController : MonoBehaviour
         {
             Debug.Log("m_cameraController not found!");
         }
+
+        m_dashParticles = GetComponentInChildren<ParticleSystem>();        
     }
 	
 	// Update is called once per frame
 	void Update ()
     {
+        m_airDashes = Mathf.Lerp(m_airDashes, 3.0f, 0.1f * Time.deltaTime);
+
         m_playerAnimator.SetFloat("Speed", m_speed / m_maxSpeed);
         m_playerAnimator.SetFloat("Turn", m_turn);
         m_playerAnimator.SetFloat("Falling", m_playerRB.velocity.y);
         m_playerAnimator.SetFloat("JumpCharge", m_jumpCharge);
+        m_playerAnimator.SetFloat("Flying", m_flying);
         m_playerAnimator.SetBool("Grounded", m_grounded);
 
         m_playerAnimator.speed = 1.0f + Mathf.SmoothStep(0.75f, 1.0f, m_speed);
@@ -67,11 +74,9 @@ public class PlayerController : MonoBehaviour
     }
 
     private void GroundCheck ()
-    {
-        //Debug.DrawRay(transform.position + transform.up * 0.5f, -transform.up, Color.red);
-        
+    {        
         if (Physics.Raycast(transform.position + transform.up * 0.5f, -transform.up, out m_groundAt, m_groundCheckDist + 0.5f))
-        {
+        {   
             m_grounded = true;
             AlignWithGround();         
         }     
@@ -85,11 +90,11 @@ public class PlayerController : MonoBehaviour
 
     private void AlignWithGround()
     {
-        Debug.DrawRay(m_groundAt.point, m_groundAt.normal, Color.green);
+        //Debug.DrawRay(m_groundAt.point, m_groundAt.normal, Color.green);
 
         Vector3 alignedForward = -Vector3.Cross(Vector3.Cross(transform.forward, m_groundAt.normal), m_groundAt.normal);
 
-        Debug.DrawRay(m_groundAt.point, alignedForward, Color.blue);
+        //Debug.DrawRay(m_groundAt.point, alignedForward, Color.blue);
 
         Quaternion alignedRot = Quaternion.LookRotation(alignedForward, m_groundAt.normal);
         transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 300.0f * Time.deltaTime);
@@ -176,9 +181,16 @@ public class PlayerController : MonoBehaviour
         
         Vector3 tarForward = -Vector3.Cross(Vector3.Cross(transform.forward, Vector3.up), Vector3.up);
 
-        Debug.DrawRay(transform.position, tarForward, Color.green);
+        //Debug.DrawRay(transform.position, tarForward, Color.green);
 
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(tarForward, Vector3.up), 0.5f);
+        if (m_airDashing)
+        {
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(m_playerRB.velocity.normalized), 0.5f);
+        }
+        else
+        {
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(tarForward, Vector3.up), 0.5f);
+        }
 
         Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
         move3d = transform.rotation * move3d;
@@ -195,6 +207,96 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void AirDash (Vector2 move)
+    {
+        if (m_airDashes < 1.0f || move.magnitude < 0.1f)
+        {
+            return;
+        }
+
+        if (m_airDashing )
+        {
+            m_airDashCancel = true;
+            return;
+        }
+
+        m_airDashes -= 1.0f;
+                
+        m_dashParticles.Play();
+
+        move = move.normalized * Mathf.Min(1.0f, move.magnitude); // Make keyboard input look like joystick input (joystick unaffected)
+
+        Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
+        move3d = transform.rotation * move3d;
+
+        StartCoroutine(AirDashing(move3d));
+    }
+
+    private IEnumerator AirDashing (Vector3 move)
+    {
+        m_airDashing = true;
+                
+        float startTime = Time.time, endTime = startTime + m_dashDuration;
+
+        do
+        {
+            m_playerRB.velocity = move.normalized * Mathf.Lerp(m_playerRB.velocity.magnitude, m_airDashSpeed, 10.0f * Time.deltaTime);
+            //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move, transform.up).normalized, transform.up);
+            Quaternion rot = Quaternion.LookRotation(m_playerRB.velocity.normalized);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 2.0f);
+
+            if (Physics.Raycast(transform.position + transform.up * 0.5f, Vector3.Lerp(-transform.up, transform.forward, (m_speed / m_maxSpeed) * 0.5f), out m_groundAt))
+            {
+                Debug.DrawLine(transform.position, m_groundAt.point, Color.white);
+
+                float fly = Vector3.Dot(transform.forward, m_playerRB.velocity.normalized);
+                fly *= Mathf.Min(m_speed / m_maxSpeed, 1.0f);
+                fly *= Mathf.Min(Vector3.Distance(transform.position, m_groundAt.point) / m_minFlightHeight, 1.0f);
+                fly = Mathf.Clamp(fly, 0.0f, 1.0f);
+                m_flying = Mathf.Lerp(m_flying, fly, 20.0f * Time.deltaTime);
+            }
+            else
+            {
+                float fly = Vector3.Dot(transform.forward, m_playerRB.velocity.normalized);
+                fly *= Mathf.Min(m_speed / m_maxSpeed, 1.0f);
+                fly = Mathf.Clamp(fly, 0.0f, 1.0f);
+                m_flying = Mathf.Lerp(m_flying, fly, 20.0f * Time.deltaTime);
+            }
+
+            yield return null;
+        } while (Time.time <= endTime && !m_airDashCancel);
+
+        do
+        {
+            if (Physics.Raycast(transform.position + transform.up * 0.5f, Vector3.Lerp(-transform.up, transform.forward, (m_speed / m_maxSpeed) * 0.5f), out m_groundAt))
+            {
+                Debug.DrawLine(transform.position, m_groundAt.point, Color.white);
+
+                m_flying *= Mathf.Max(Vector3.Dot(transform.forward, m_playerRB.velocity.normalized), 0.0f);
+                m_flying *= Mathf.Min(m_speed / m_maxSpeed, 1.0f);
+                m_flying *= Mathf.Min(Vector3.Distance(transform.position, m_groundAt.point) / m_minFlightHeight, 1.0f);
+                m_flying = Mathf.Lerp(m_flying, 0.0f, 10.0f * Time.deltaTime);
+            }
+            else
+            {
+                m_flying *= Mathf.Max(Vector3.Dot(transform.forward, m_playerRB.velocity.normalized), 0.0f);
+                m_flying *= Mathf.Min(m_speed / m_maxSpeed, 1.0f);                
+                m_flying = Mathf.Lerp(m_flying, 0.0f, 10.0f * Time.deltaTime);
+            }
+
+            if (m_flying <= 0.05f)
+            {
+                m_flying = 0.0f;
+            }
+
+            yield return null;
+        } while (m_flying > 0.0f && !m_airDashCancel);
+        
+        m_airDashing = false;
+        m_airDashCancel = false;
+        yield return null;
+    }
+
     public void Jump ()
     {
         if (!m_grounded)
@@ -208,8 +310,8 @@ public class PlayerController : MonoBehaviour
 
         float momentum = m_speed / m_maxSpeed;
 
-        Vector3 jumpV = Vector3.Lerp(transform.up, transform.up, momentum * 0.5f);
-        m_playerRB.velocity += jumpV * m_jumpSpeed;
+        Vector3 jumpV = Vector3.Lerp(transform.up, transform.up, momentum * 0.5f * Time.deltaTime);
+        m_playerRB.velocity += jumpV * m_jumpSpeed * m_jumpCharge;
     }
 
     private IEnumerator Jumping ()

@@ -44,10 +44,15 @@ public class PlayerInput : MonoBehaviour
         m_move.x = Input.GetAxis("Horizontal");
         m_move.y = Input.GetAxis("Vertical");
 
-        if (Input.GetButton("Jump") && !m_jumpCharging)
+        if (Input.GetButton("Jump") && !m_jumpCharging && m_playerController.PlayerIsGrounded())
         {
             StartCoroutine(JumpCharge());
             m_jump = true;
+        }
+        else if (Input.GetButtonUp("Jump") && !m_playerController.PlayerIsGrounded())
+        {
+            Debug.Log("dash!");
+            m_playerController.AirDash(m_move);
         }
         else if (Input.GetButtonUp("Jump") && m_jump)
         {
