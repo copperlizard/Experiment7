@@ -67,7 +67,7 @@ public class PlayerInput : MonoBehaviour
         m_jumpCharging = true;
         do
         {
-            m_jumpCharge = Mathf.Lerp(m_jumpCharge, 1.0f, m_jumpChargeRate * Time.deltaTime);
+            m_jumpCharge = Mathf.SmoothStep(m_jumpCharge, 1.0f, m_jumpChargeRate * Time.deltaTime);
             yield return null;
         } while (Input.GetButton("Jump"));
 

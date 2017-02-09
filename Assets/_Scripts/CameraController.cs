@@ -23,6 +23,8 @@ public class CameraController : MonoBehaviour
     [Range(0.0f, 180.0f)]
     private float m_tiltMax = 180.0f, m_panMax = 180.0f;
 
+    private float m_pan = 0.0f, m_tilt = 0.0f;
+
     // Use this for initialization
     void Start ()
     {
@@ -49,7 +51,7 @@ public class CameraController : MonoBehaviour
 
     private void ChasePlayer ()
     {
-        Vector3 tarPos = m_player.transform.position + m_player.transform.rotation * m_boomVector;
+        Vector3 tarPos = m_player.transform.position + Quaternion.Euler(m_tilt, m_pan, 0.0f) * (m_player.transform.rotation * m_boomVector);
         Vector3 lookTar = m_player.transform.position + m_player.transform.rotation * m_lookOffset;
         Vector3 checkSightLine = tarPos - lookTar;
 
@@ -69,7 +71,7 @@ public class CameraController : MonoBehaviour
         }        
 
         transform.position = Vector3.Lerp(transform.position, tarPos, 5.0f * Time.deltaTime);
-        transform.rotation = Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up);
+        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up), 20.0f * Time.deltaTime);
 
         m_motionBlur.blurAmount = m_playerRB.velocity.magnitude / 60.0f;
     }
@@ -78,6 +80,7 @@ public class CameraController : MonoBehaviour
     {
         float pan = (move.x >= 0.0f)? move.x * m_panMax : move.x * m_panMin, tilt = (move.y >= 0.0f) ? move.y * m_tiltMax : move.y * m_tiltMin;
 
-        //Debug.Log("pan == " + pan.ToString() + " ; tilt == " + tilt.ToString());
+        m_pan = Mathf.Lerp(m_pan, pan, 3.0f * Time.deltaTime);
+        m_tilt = Mathf.Lerp(m_tilt, tilt, 3.0f * Time.deltaTime);
     }
 }

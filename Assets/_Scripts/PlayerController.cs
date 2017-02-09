@@ -19,9 +19,11 @@ public class PlayerController : MonoBehaviour
     
     private RaycastHit m_groundAt;
 
+    private Vector3 m_groundParallel;
+    
     private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f;
 
-    private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false;
+    private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false, m_stalled = false;
 
 	// Use this for initialization
 	void Start ()
@@ -76,36 +78,59 @@ public class PlayerController : MonoBehaviour
     private void GroundCheck ()
     {        
         if (Physics.Raycast(transform.position + transform.up * 0.5f, -transform.up, out m_groundAt, m_groundCheckDist + 0.5f))
-        {   
-            m_grounded = true;
-            AlignWithGround();         
+        {
+            if (!m_stalled)
+            {
+                m_grounded = true;
+
+                // Check for stalled wallrun   
+                if (m_playerRB.velocity.magnitude < 0.5f * m_maxSpeed && Vector3.Dot(transform.up, Vector3.up) < 0.5f)
+                {
+                    m_grounded = false;
+                    m_stalled = true;
+                }
+            }
+            else
+            {
+                if (Vector3.Dot(m_groundAt.normal, Vector3.up) > 0.5f)
+                {
+                    m_grounded = true;
+                    m_stalled = false;
+                }
+            }            
+
+            AlignWithGround();
         }     
         else
         {
             m_grounded = false;
         }
 
-        // ADD CHECK FOR STALLED WALL RUN (not grounded!)   
+        return;
     }
 
     private void AlignWithGround()
     {
         //Debug.DrawRay(m_groundAt.point, m_groundAt.normal, Color.green);
 
-        Vector3 alignedForward = -Vector3.Cross(Vector3.Cross(transform.forward, m_groundAt.normal), m_groundAt.normal);
+        //Vector3 alignedForward = -Vector3.Cross(Vector3.Cross(transform.forward, m_groundAt.normal), m_groundAt.normal);
+        m_groundParallel = -Vector3.Cross(Vector3.Cross(transform.forward, m_groundAt.normal), m_groundAt.normal);
 
         //Debug.DrawRay(m_groundAt.point, alignedForward, Color.blue);
 
-        Quaternion alignedRot = Quaternion.LookRotation(alignedForward, m_groundAt.normal);
-        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 300.0f * Time.deltaTime);
+
+
+        //Quaternion alignedRot = Quaternion.LookRotation(alignedForward, m_groundAt.normal);
+        Quaternion alignedRot = Quaternion.LookRotation(m_groundParallel, m_groundAt.normal);
+        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 3.0f * Time.deltaTime);
 
         Vector3 toGround = m_groundAt.point - transform.position;       
         
-        if (Vector3.Dot(transform.up, toGround.normalized) > 0.0) // Lift player out of the ground!
+        if (toGround.magnitude > 0.005f) // Lift player out of the ground!
         {
             transform.position = m_groundAt.point;
-        } 
-        
+        }        
+
         //Debug.DrawLine(transform.position, transform.position + toGround, Color.blue);
     }
 
@@ -155,8 +180,9 @@ public class PlayerController : MonoBehaviour
         {
             m_playerRB.useGravity = false;
         }
-        
-        Vector3 vel = transform.forward * m_speed;
+
+        //Vector3 vel = transform.forward * m_speed;
+        Vector3 vel = m_groundParallel.normalized * m_speed;
 
         m_playerRB.velocity = vel;
         
