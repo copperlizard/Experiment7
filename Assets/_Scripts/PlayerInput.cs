@@ -51,12 +51,12 @@ public class PlayerInput : MonoBehaviour
         }
         else if (Input.GetButtonUp("Jump") && !m_playerController.PlayerIsGrounded())
         {
-            Debug.Log("dash!");
+            //Debug.Log("dash!");
             m_playerController.AirDash(m_move);
         }
         else if (Input.GetButtonUp("Jump") && m_jump)
         {
-            Debug.Log("jump!");
+            //Debug.Log("jump!");
             m_playerController.Jump();
             m_jumpCharge = 0.0f;
         }

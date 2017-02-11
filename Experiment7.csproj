@@ -121,6 +121,7 @@
     <Compile Include="Assets\Resources\Standard Assets\Effects\ImageEffects\Scripts\Vortex.cs" />
     <Compile Include="Assets\_Scripts\CameraController.cs" />
     <Compile Include="Assets\_Scripts\CameraInput.cs" />
+    <Compile Include="Assets\_Scripts\HUDManager.cs" />
     <Compile Include="Assets\_Scripts\LevelManager.cs" />
     <Compile Include="Assets\_Scripts\MainMenuPanelManager.cs" />
     <Compile Include="Assets\_Scripts\PlayerController.cs" />

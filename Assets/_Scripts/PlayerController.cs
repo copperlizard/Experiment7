@@ -6,7 +6,8 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]
-    private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_airDashSpeed = 30.0f, m_dashDuration = 1.0f, m_groundCheckDist = 0.25f, m_minFlightHeight = 1.0f;
+    private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_airDashSpeed = 30.0f, 
+        m_dashDuration = 1.0f, m_groundCheckDist = 0.25f, m_minFlightHeight = 1.0f, m_flightTransitionRate = 20.0f;
 
     private Animator m_playerAnimator;
 
@@ -57,8 +58,8 @@ public class PlayerController : MonoBehaviour
 	
 	// Update is called once per frame
 	void Update ()
-    {
-        m_airDashes = Mathf.Lerp(m_airDashes, 3.0f, 0.1f * Time.deltaTime);
+    {        
+        m_airDashes = Mathf.Min(3.0f, m_airDashes + 0.1f * Time.deltaTime);
 
         m_playerAnimator.SetFloat("Speed", m_speed / m_maxSpeed);
         m_playerAnimator.SetFloat("Turn", m_turn);
@@ -128,7 +129,7 @@ public class PlayerController : MonoBehaviour
 
         //Quaternion alignedRot = Quaternion.LookRotation(alignedForward, m_groundAt.normal);
         Quaternion alignedRot = Quaternion.LookRotation(m_groundParallel, m_groundAt.normal);
-        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 5.0f * Time.deltaTime);
+        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 10.0f * Time.deltaTime);
 
         Vector3 toGround = m_groundAt.point - transform.position;       
         
@@ -156,18 +157,17 @@ public class PlayerController : MonoBehaviour
         Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
         move3d = transform.rotation * move3d;
 
-        tiltFactor *= Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.8f, Mathf.Abs(Vector3.Dot(move3d, transform.forward))));
+        tiltFactor *= Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.85f, Mathf.Abs(Vector3.Dot(move3d, transform.forward))));
 
         m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude * tiltFactor, 7.5f * Time.deltaTime);
-
-        //Debug.Log("m_speed == " + m_speed.ToString());
-
-        //Debug.Log(Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.8f, Mathf.Abs(Vector3.Dot(move3d, transform.forward)))).ToString());
+        //m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.magnitude * tiltFactor, 7.5f * Time.deltaTime);
 
         // Reverse        
-        if (Vector3.Dot(move3d, -transform.forward) > 0.45f)
+        if (Vector3.Dot(move3d.normalized, -transform.forward) > 0.45f)
         {
-            m_speed = -m_speed;
+            m_speed = -Mathf.Lerp(m_playerRB.velocity.magnitude, (m_maxSpeed * 0.5f) * move.magnitude * tiltFactor, 7.5f * Time.deltaTime);
+            //m_speed = m_speed * 0.5f;
+            //m_speed = -m_speed;
         }
 
         if (m_grounded)
@@ -187,9 +187,8 @@ public class PlayerController : MonoBehaviour
             m_playerRB.useGravity = false;
         }
 
-        //Vector3 vel = transform.forward * m_speed;
         Vector3 vel = m_groundParallel.normalized * m_speed;
-
+        
         m_playerRB.velocity = vel;
         
         if (move.magnitude < 0.05)
@@ -235,7 +234,8 @@ public class PlayerController : MonoBehaviour
         {
             Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
 
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.85f * Mathf.SmoothStep(0.0f, 1.0f, m_playerRB.velocity.magnitude / m_maxSpeed)));
+            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.85f * Mathf.SmoothStep(0.0f, 1.0f, m_playerRB.velocity.magnitude / m_maxSpeed)));
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.85f * Mathf.SmoothStep(0.0f, 1.0f, m_speed)));
         }
     }
 
@@ -277,7 +277,7 @@ public class PlayerController : MonoBehaviour
             transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 2.0f);
 
             //float fly = Vector3.Dot(transform.forward, m_playerRB.velocity.normalized);
-            float fly = Mathf.Lerp(m_flying, 1.0f, 20.0f * Time.deltaTime);
+            float fly = Mathf.Lerp(m_flying, 1.0f, m_flightTransitionRate * Time.deltaTime);
             //fly *= Mathf.Min(m_speed / m_maxSpeed * 0.5f, 1.0f);
 
             if (Physics.Raycast(transform.position + transform.up * 0.5f, Vector3.Lerp(-transform.up, transform.forward, (m_speed / m_maxSpeed) * 0.5f), out m_groundAt))
@@ -288,7 +288,7 @@ public class PlayerController : MonoBehaviour
             }            
 
             fly = Mathf.Clamp(fly, 0.0f, 1.0f);
-            m_flying = Mathf.Lerp(m_flying, fly, 20.0f * Time.deltaTime);
+            m_flying = Mathf.Lerp(m_flying, fly, m_flightTransitionRate * Time.deltaTime);
 
             yield return null;
         } while (Time.time <= endTime && !m_airDashCancel);
@@ -302,7 +302,7 @@ public class PlayerController : MonoBehaviour
                 m_flying *= Mathf.Min(Vector3.Distance(transform.position, m_groundAt.point) / m_minFlightHeight, 1.0f);
             }
 
-            m_flying = Mathf.Lerp(m_flying, 0.0f, 20.0f * Time.deltaTime);            
+            m_flying = Mathf.Lerp(m_flying, 0.0f, m_flightTransitionRate * Time.deltaTime);            
 
             yield return null;
         } while (m_flying > 0.05f && !m_airDashCancel);
@@ -346,8 +346,23 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public bool PlayerIsGrounded()
+    public bool PlayerIsGrounded ()
     {
         return m_grounded;
     }
+
+    public float getSpeed ()
+    {
+        return m_speed;
+    }
+
+    public float getMaxSpeed()
+    {
+        return m_maxSpeed;
+    }
+
+    public float getAirDashes ()
+    {
+        return m_airDashes;
+    }    
 }
