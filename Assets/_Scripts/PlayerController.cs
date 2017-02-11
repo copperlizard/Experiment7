@@ -62,7 +62,8 @@ public class PlayerController : MonoBehaviour
 
         m_playerAnimator.SetFloat("Speed", m_speed / m_maxSpeed);
         m_playerAnimator.SetFloat("Turn", m_turn);
-        m_playerAnimator.SetFloat("Falling", m_playerRB.velocity.y);
+        //m_playerAnimator.SetFloat("Falling", m_playerRB.velocity.y);
+        m_playerAnimator.SetFloat("Falling", Mathf.Lerp(0.0f, transform.InverseTransformVector(m_playerRB.velocity).y, 1.0f - m_flying));
         m_playerAnimator.SetFloat("JumpCharge", m_jumpCharge);
         m_playerAnimator.SetFloat("Flying", m_flying);
         m_playerAnimator.SetBool("Grounded", m_grounded);
@@ -111,6 +112,11 @@ public class PlayerController : MonoBehaviour
 
     private void AlignWithGround()
     {
+        if (m_airDashing)
+        {
+            return;
+        }
+
         //Debug.DrawRay(m_groundAt.point, m_groundAt.normal, Color.green);
 
         //Vector3 alignedForward = -Vector3.Cross(Vector3.Cross(transform.forward, m_groundAt.normal), m_groundAt.normal);
@@ -122,7 +128,7 @@ public class PlayerController : MonoBehaviour
 
         //Quaternion alignedRot = Quaternion.LookRotation(alignedForward, m_groundAt.normal);
         Quaternion alignedRot = Quaternion.LookRotation(m_groundParallel, m_groundAt.normal);
-        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 3.0f * Time.deltaTime);
+        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 5.0f * Time.deltaTime);
 
         Vector3 toGround = m_groundAt.point - transform.position;       
         
@@ -266,28 +272,23 @@ public class PlayerController : MonoBehaviour
 
         do
         {
-            m_playerRB.velocity = move.normalized * Mathf.Lerp(m_playerRB.velocity.magnitude, m_airDashSpeed, 10.0f * Time.deltaTime);
-            //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move, transform.up).normalized, transform.up);
+            m_playerRB.velocity = move.normalized * Mathf.Lerp(m_playerRB.velocity.magnitude, m_airDashSpeed, 10.0f * Time.deltaTime);            
             Quaternion rot = Quaternion.LookRotation(m_playerRB.velocity.normalized);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 2.0f);
+
+            //float fly = Vector3.Dot(transform.forward, m_playerRB.velocity.normalized);
+            float fly = Mathf.Lerp(m_flying, 1.0f, 20.0f * Time.deltaTime);
+            //fly *= Mathf.Min(m_speed / m_maxSpeed * 0.5f, 1.0f);
 
             if (Physics.Raycast(transform.position + transform.up * 0.5f, Vector3.Lerp(-transform.up, transform.forward, (m_speed / m_maxSpeed) * 0.5f), out m_groundAt))
             {
                 Debug.DrawLine(transform.position, m_groundAt.point, Color.white);
-
-                float fly = Vector3.Dot(transform.forward, m_playerRB.velocity.normalized);
-                fly *= Mathf.Min(m_speed / m_maxSpeed, 1.0f);
+                
                 fly *= Mathf.Min(Vector3.Distance(transform.position, m_groundAt.point) / m_minFlightHeight, 1.0f);
-                fly = Mathf.Clamp(fly, 0.0f, 1.0f);
-                m_flying = Mathf.Lerp(m_flying, fly, 20.0f * Time.deltaTime);
-            }
-            else
-            {
-                float fly = Vector3.Dot(transform.forward, m_playerRB.velocity.normalized);
-                fly *= Mathf.Min(m_speed / m_maxSpeed, 1.0f);
-                fly = Mathf.Clamp(fly, 0.0f, 1.0f);
-                m_flying = Mathf.Lerp(m_flying, fly, 20.0f * Time.deltaTime);
-            }
+            }            
+
+            fly = Mathf.Clamp(fly, 0.0f, 1.0f);
+            m_flying = Mathf.Lerp(m_flying, fly, 20.0f * Time.deltaTime);
 
             yield return null;
         } while (Time.time <= endTime && !m_airDashCancel);
@@ -298,26 +299,15 @@ public class PlayerController : MonoBehaviour
             {
                 Debug.DrawLine(transform.position, m_groundAt.point, Color.white);
 
-                m_flying *= Mathf.Max(Vector3.Dot(transform.forward, m_playerRB.velocity.normalized), 0.0f);
-                m_flying *= Mathf.Min(m_speed / m_maxSpeed, 1.0f);
                 m_flying *= Mathf.Min(Vector3.Distance(transform.position, m_groundAt.point) / m_minFlightHeight, 1.0f);
-                m_flying = Mathf.Lerp(m_flying, 0.0f, 10.0f * Time.deltaTime);
-            }
-            else
-            {
-                m_flying *= Mathf.Max(Vector3.Dot(transform.forward, m_playerRB.velocity.normalized), 0.0f);
-                m_flying *= Mathf.Min(m_speed / m_maxSpeed, 1.0f);                
-                m_flying = Mathf.Lerp(m_flying, 0.0f, 10.0f * Time.deltaTime);
             }
 
-            if (m_flying <= 0.05f)
-            {
-                m_flying = 0.0f;
-            }
+            m_flying = Mathf.Lerp(m_flying, 0.0f, 20.0f * Time.deltaTime);            
 
             yield return null;
-        } while (m_flying > 0.0f && !m_airDashCancel);
-        
+        } while (m_flying > 0.05f && !m_airDashCancel);
+
+        m_flying = 0.0f;
         m_airDashing = false;
         m_airDashCancel = false;
         yield return null;

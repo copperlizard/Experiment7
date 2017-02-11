@@ -51,7 +51,7 @@ public class CameraController : MonoBehaviour
 
     private void ChasePlayer ()
     {
-        Vector3 tarPos = m_player.transform.position + Quaternion.Euler(m_tilt, m_pan, 0.0f) * (m_player.transform.rotation * m_boomVector);
+        Vector3 tarPos = m_player.transform.position + m_player.transform.rotation * (Quaternion.Euler(m_tilt, m_pan, 0.0f) * m_boomVector);
         Vector3 lookTar = m_player.transform.position + m_player.transform.rotation * m_lookOffset;
         Vector3 checkSightLine = tarPos - lookTar;
 
