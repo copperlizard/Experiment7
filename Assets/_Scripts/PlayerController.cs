@@ -79,7 +79,7 @@ public class PlayerController : MonoBehaviour
 
     private void GroundCheck ()
     {        
-        if (Physics.Raycast(transform.position + transform.up * 0.5f, -transform.up, out m_groundAt, m_groundCheckDist + 0.5f))
+        if (Physics.Raycast(transform.position + transform.up * 0.5f, -transform.up, out m_groundAt, m_groundCheckDist + 0.5f, LayerMask.NameToLayer("PlayerBody"), QueryTriggerInteraction.Ignore))
         {
             if (!m_stalled)
             {

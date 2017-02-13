@@ -45,7 +45,6 @@ public class HUDManager : MonoBehaviour
         }
 
         m_playerController = m_player.GetComponent<PlayerController>();
-
         if (m_playerController == null)
         {
             Debug.Log("m_playerController not found!");
@@ -56,7 +55,6 @@ public class HUDManager : MonoBehaviour
 	void Update ()
     {
         m_dashGauge.fillAmount = m_playerController.getAirDashes() / 3.0f;
-
 
         float speed = m_playerController.getSpeed() / m_playerController.getMaxSpeed();
         m_speedGauge.fillAmount = Mathf.Min(1.0f, speed);

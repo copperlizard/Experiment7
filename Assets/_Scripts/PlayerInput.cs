@@ -49,15 +49,20 @@ public class PlayerInput : MonoBehaviour
             StartCoroutine(JumpCharge());
             m_jump = true;
         }
-        else if (Input.GetButtonUp("Jump") && !m_playerController.PlayerIsGrounded())
+        else if (Input.GetButtonDown("Jump") && !m_playerController.PlayerIsGrounded())
         {
             //Debug.Log("dash!");
+            m_jumpCharge = 0.0f; //maybe uneccessary, trying to fix bug where charge gets "stuck"
             m_playerController.AirDash(m_move);
         }
-        else if (Input.GetButtonUp("Jump") && m_jump)
+        else if (Input.GetButtonUp("Jump") && m_jump && m_playerController.PlayerIsGrounded())
         {
             //Debug.Log("jump!");
             m_playerController.Jump();
+            m_jumpCharge = 0.0f;
+        }
+        else if (Input.GetButtonUp("Jump") && m_jump && !m_playerController.PlayerIsGrounded())
+        {
             m_jumpCharge = 0.0f;
         }
     }
