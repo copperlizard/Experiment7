@@ -22,7 +22,7 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 m_groundParallel;
     
-    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f;
+    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f, m_speedMod = 1.0f;
 
     private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false, m_stalled = false;
 
@@ -157,9 +157,9 @@ public class PlayerController : MonoBehaviour
         Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
         move3d = transform.rotation * move3d;
 
-        tiltFactor *= Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.85f, Mathf.Abs(Vector3.Dot(move3d, transform.forward))));
+        tiltFactor *= Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.75f, Mathf.Abs(Vector3.Dot(move3d, transform.forward))));
 
-        m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude * tiltFactor, 7.5f * Time.deltaTime);
+        m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 7.5f * Time.deltaTime);
         //m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.magnitude * tiltFactor, 7.5f * Time.deltaTime);
 
         // Reverse        
@@ -199,7 +199,7 @@ public class PlayerController : MonoBehaviour
         {
             Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f)?1.0f:-1.0f), transform.up).normalized, transform.up);
 
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.8f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
         }
     }
 
@@ -356,13 +356,19 @@ public class PlayerController : MonoBehaviour
         return m_speed;
     }
 
-    public float getMaxSpeed()
+    public float GetMaxSpeed()
     {
         return m_maxSpeed;
     }
 
-    public float getAirDashes ()
+    public float GetAirDashes ()
     {
         return m_airDashes;
-    }    
+    }
+    
+    public void AdjustSpeedMod (float delta)
+    {
+        m_speedMod += delta;
+        m_speedMod = Mathf.Clamp(m_speedMod, 0.0f, 1.0f);
+    } 
 }

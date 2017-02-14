@@ -5,6 +5,7 @@ using UnityEngine;
 public class SlowBallTriggerZone : MonoBehaviour
 {
     private GameObject m_player;
+    private PlayerController m_playerController;
 
     private bool m_playerDetected = false;
 
@@ -16,6 +17,13 @@ public class SlowBallTriggerZone : MonoBehaviour
         if (m_player == null)
         {
             Debug.Log("m_player not found!");
+        }
+
+        m_playerController = m_player.GetComponent<PlayerController>();
+
+        if (m_playerController == null)
+        {
+            Debug.Log("m_playerController not found!");
         }
     }
 	
@@ -33,16 +41,29 @@ public class SlowBallTriggerZone : MonoBehaviour
         return m_player;
     }
 
+    public PlayerController GetPlayerController ()
+    {
+        return m_playerController;
+    }
+
     public bool PlayerDetected ()
     {
         return m_playerDetected;
     }
 
     private void OnTriggerEnter(Collider other)
-    {
+    {        
         if (other.gameObject.layer == LayerMask.NameToLayer("Player"))
         {
             m_playerDetected = true;
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.layer == LayerMask.NameToLayer("Player"))
+        {
+            m_playerDetected = false;
         }
     }
 }

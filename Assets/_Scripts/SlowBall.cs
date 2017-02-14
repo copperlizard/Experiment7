@@ -34,16 +34,16 @@ public class SlowBall : MonoBehaviour
             Debug.Log("m_player not found!");
         }
 
+        m_playerController = m_triggerZone.GetPlayerController();
+        if (m_playerController == null)
+        {
+            Debug.Log("m_playerController not found!");
+        }
+
         m_ballRB = GetComponent<Rigidbody>();
         if (m_ballRB == null)
         {
             Debug.Log("m_playerRB not found!");
-        }
-
-        m_playerController = m_player.GetComponent<PlayerController>();
-        if (m_playerController == null)
-        {
-            Debug.Log("m_playerController not found!");
         }
 
         m_startLocalPos = transform.localPosition;
@@ -60,7 +60,7 @@ public class SlowBall : MonoBehaviour
 
                 if (m_playerDetected)
                 {                    
-                    m_ballRB.velocity = transform.parent.TransformVector(m_startLocalPos.normalized * m_followSpeed);
+                    m_ballRB.velocity = m_triggerZone.transform.TransformVector(m_startLocalPos.normalized * m_followSpeed);
                     transform.parent = null;
                 }
                 else
@@ -70,12 +70,12 @@ public class SlowBall : MonoBehaviour
             }
             else
             {
-                SeekPlayer();
+                ChasePlayer();
             }
         }             
 	}
 
-    private void SeekPlayer ()
+    private void ChasePlayer ()
     {
         Vector3 toPlayer = (m_player.transform.position + m_player.transform.up * 1.6f) - transform.position;
 
@@ -90,14 +90,23 @@ public class SlowBall : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnCollisionStay(Collision collision)
     {
-        if (collision.gameObject.tag == "Player")
+        //Debug.Log(gameObject.name + " collided with " + collision.collider.gameObject.name);
+
+        if (collision.collider.tag == "PlayerBody")
         {
-            m_stuck = true;
-            m_ballRB.velocity = Vector3.zero;
-            m_ballRB.mass = 0.0f;
-            transform.parent = collision.transform;
+            //Debug.Log("stuck to " + collision.collider.gameObject.name);
+
+            if (!m_stuck)
+            {
+                m_stuck = true;
+                m_playerController.AdjustSpeedMod(-0.05f);
+                transform.parent = collision.collider.gameObject.transform;
+                Destroy(m_ballRB);
+
+                transform.position += -collision.contacts[0].normal * (transform.localScale.x * 0.5f);
+            }                         
         }
     }
 }

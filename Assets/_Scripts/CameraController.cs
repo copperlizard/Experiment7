@@ -63,7 +63,7 @@ public class CameraController : MonoBehaviour
 
         // Obstructed
         RaycastHit hit;
-        if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.NameToLayer("Player")))
+        if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, LayerMask.NameToLayer("Player") | LayerMask.NameToLayer("Projectile")))
         {
             //Debug.Log("camera view obstructed by " + hit.collider.gameObject.name + "!");
 
@@ -73,7 +73,7 @@ public class CameraController : MonoBehaviour
         transform.position = Vector3.Lerp(transform.position, tarPos, 5.0f * Time.deltaTime);
         transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up), 20.0f * Time.deltaTime);
 
-        m_motionBlur.blurAmount = m_playerRB.velocity.magnitude / 60.0f;
+        m_motionBlur.blurAmount = m_playerRB.velocity.magnitude / 90.0f;
     }
 
     public void PanTilt (Vector2 move)
