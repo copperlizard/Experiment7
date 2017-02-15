@@ -86,7 +86,8 @@ public class PlayerController : MonoBehaviour
                 m_grounded = true;
 
                 // Check for stalled wallrun   
-                if (m_playerRB.velocity.magnitude < 0.5f * m_maxSpeed && Vector3.Dot(transform.up, Vector3.up) < 0.5f)
+                //if (m_playerRB.velocity.magnitude < 0.5f * m_maxSpeed && Vector3.Dot(transform.up, Vector3.up) < 0.5f)
+                if (m_speed < 0.5f * m_maxSpeed && Vector3.Dot(transform.up, Vector3.up) < 0.5f)
                 {
                     m_grounded = false;
                     m_stalled = true;

@@ -6,14 +6,16 @@ using UnityEngine;
 public class PlayerInput : MonoBehaviour
 {
     [SerializeField]
-    private float m_jumpChargeRate = 5.0f;
+    private float m_jumpChargeRate = 5.0f, m_backConfirmTime = 1.0f;
+
+    private GameManager m_gameManager;
 
     private PlayerController m_playerController;
     private Vector2 m_move;
 
     private float m_jumpCharge = 0.0f;
 
-    private bool m_jumpCharging = false, m_jump = false;
+    private bool m_jumpCharging = false, m_jump = false, m_pauseToggle = false, m_confirmingBack = false;
 
 	// Use this for initialization
 	void Start ()
@@ -24,7 +26,14 @@ public class PlayerInput : MonoBehaviour
         {
             Debug.Log("m_playerController not found!");
         }
-	}
+
+        m_gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
+
+        if (m_gameManager == null)
+        {
+            Debug.Log("m_gameManager not found!");
+        }
+    }
 	
 	// Update is called once per frame
 	void Update ()
@@ -41,6 +50,21 @@ public class PlayerInput : MonoBehaviour
 
     private void GetInput ()
     {
+        if (Input.GetButtonDown("Back") && !m_confirmingBack)
+        {
+            StartCoroutine(ConfirmBack());
+        }
+
+        if (Input.GetButtonDown("Pause") && !m_pauseToggle)
+        {            
+            m_gameManager.PauseGame();
+            m_pauseToggle = true;
+        }
+        else if (m_pauseToggle && !Input.GetButton("Pause"))
+        {
+            m_pauseToggle = false;
+        }
+
         m_move.x = Input.GetAxis("Horizontal");
         m_move.y = Input.GetAxis("Vertical");
 
@@ -65,6 +89,32 @@ public class PlayerInput : MonoBehaviour
         {
             m_jumpCharge = 0.0f;
         }
+    }
+
+    private IEnumerator ConfirmBack ()
+    {
+        float startTime = Time.time;
+        m_confirmingBack = true;
+        bool confirmed = true;
+
+        do
+        {
+            if (!Input.GetButton("Back"))
+            {
+                confirmed = false;
+            }
+
+            yield return null;
+        } while (Time.time < startTime + m_backConfirmTime && confirmed);
+
+        m_confirmingBack = false;
+
+        if (confirmed)
+        {
+            m_gameManager.ReloadScene();
+        }
+
+        yield return null;
     }
 
     private IEnumerator JumpCharge ()
