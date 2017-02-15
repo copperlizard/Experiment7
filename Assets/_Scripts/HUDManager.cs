@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,7 +10,9 @@ public class HUDManager : MonoBehaviour
     private Image m_speedGauge, m_excessSpeedGauge, m_dashGauge;
 
     [SerializeField]
-    private Text m_speedText;
+    private Text m_speedText, m_timeText;
+
+    private GameManager m_gameManager;
 
     private GameObject m_player;
     private PlayerController m_playerController;
@@ -17,9 +20,20 @@ public class HUDManager : MonoBehaviour
 	// Use this for initialization
 	void Start ()
     {
+        m_gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
+        if (m_gameManager == null)
+        {
+            Debug.Log("m_gameManager not found!");
+        }
+
         if (m_speedText == null)
         {
             Debug.Log("m_speedText not assigned!");
+        }
+
+        if (m_timeText == null)
+        {
+            Debug.Log("m_timeText not assigned!");
         }
 
         if (m_speedGauge == null)
@@ -65,5 +79,8 @@ public class HUDManager : MonoBehaviour
 
         float mph = Mathf.Abs(m_playerController.getSpeed()) * 2.23694f;
         m_speedText.text = string.Format("{0:n0}mph", mph);
+
+        TimeSpan t = TimeSpan.FromSeconds(m_gameManager.GetTimeElapsed());
+        m_timeText.text = string.Format("{0:D2}:{1:D2}:{2:D3}", t.Minutes, t.Seconds, t.Milliseconds);
     }
 }

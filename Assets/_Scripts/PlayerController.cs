@@ -14,6 +14,8 @@ public class PlayerController : MonoBehaviour
     private Camera m_camera;
     private CameraController m_cameraController;
 
+    private AudioSource m_playerAudioSource;
+
     private Rigidbody m_playerRB;
 
     private ParticleSystem m_dashParticles;    
@@ -33,6 +35,12 @@ public class PlayerController : MonoBehaviour
         if (m_playerRB == null)
         {
             Debug.Log("m_playerRB not found!");
+        }
+
+        m_playerAudioSource = GetComponent<AudioSource>();
+        if (m_playerAudioSource == null)
+        {
+            Debug.Log("m_playerAudioSource not found!");
         }
 
         m_playerAnimator = GetComponentInChildren<Animator>();
@@ -65,12 +73,15 @@ public class PlayerController : MonoBehaviour
         m_playerAnimator.SetFloat("Turn", m_turn);
         //m_playerAnimator.SetFloat("Falling", m_playerRB.velocity.y);
         m_playerAnimator.SetFloat("Falling", Mathf.Lerp(0.0f, transform.InverseTransformVector(m_playerRB.velocity).y, 1.0f - m_flying));
-        m_playerAnimator.SetFloat("JumpCharge", m_jumpCharge);
+        m_playerAnimator.SetFloat("JumpCharge", m_jumpCharge * (1.0f - Mathf.InverseLerp(0.0f, 0.2f, Mathf.Abs(m_speed) / m_maxSpeed)));
         m_playerAnimator.SetFloat("Flying", m_flying);
         m_playerAnimator.SetBool("Grounded", m_grounded);
 
         m_playerAnimator.speed = 1.0f + Mathf.SmoothStep(0.75f, 1.0f, m_speed);
-	}
+
+        //m_playerAudioSource.pitch = Mathf.Lerp(m_playerAudioSource.pitch, 0.985f + (m_speed / m_maxSpeed) * 0.03f, 3.0f * Time.deltaTime);   
+        //m_playerAudioSource.pitch = Mathf.Lerp(m_playerAudioSource.pitch, Mathf.Lerp(0.0f, 1.0f, (m_speed / m_maxSpeed)), 3.0f * Time.deltaTime);
+    }
 
     public void SetJumpCharge (float charge)
     {

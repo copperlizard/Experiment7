@@ -8,7 +8,9 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private Animator m_pauseMenuAnimator;
 
-    private bool m_paused = false;
+    private float m_timeElapsed;
+
+    private bool m_paused = false, m_finished = false;
 
     // Use this for initialization
     void Start()
@@ -22,9 +24,12 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        if (!m_finished)
+        {
+            m_timeElapsed = Time.timeSinceLevelLoad;
+        }        
     }
-
+    
     public void PauseGame ()
     {
         if (m_paused)
@@ -65,5 +70,15 @@ public class GameManager : MonoBehaviour
     public void LoadScene (int ind)
     {
         SceneManager.LoadScene(ind);
+    }
+
+    public void LevelFinished ()
+    {
+        m_finished = true;
+    }
+
+    public float GetTimeElapsed ()
+    {
+        return m_timeElapsed;
     }
 }
