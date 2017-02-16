@@ -7,14 +7,15 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField]
     private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_airDashSpeed = 30.0f, 
-        m_dashDuration = 1.0f, m_groundCheckDist = 0.25f, m_minFlightHeight = 1.0f, m_flightTransitionRate = 20.0f;
+        m_dashDuration = 1.0f, m_groundCheckDist = 0.25f, m_minFlightHeight = 1.0f, m_flightTransitionRate = 20.0f,
+        m_runCycleLegOffset = 0.0f;
 
     private Animator m_playerAnimator;
 
     private Camera m_camera;
     private CameraController m_cameraController;
 
-    private AudioSource m_playerAudioSource;
+    private AudioSource m_footStepsSoundEffectSource;
 
     private Rigidbody m_playerRB;
 
@@ -37,8 +38,8 @@ public class PlayerController : MonoBehaviour
             Debug.Log("m_playerRB not found!");
         }
 
-        m_playerAudioSource = GetComponent<AudioSource>();
-        if (m_playerAudioSource == null)
+        m_footStepsSoundEffectSource = GetComponent<AudioSource>();
+        if (m_footStepsSoundEffectSource == null)
         {
             Debug.Log("m_playerAudioSource not found!");
         }
@@ -78,9 +79,27 @@ public class PlayerController : MonoBehaviour
         m_playerAnimator.SetBool("Grounded", m_grounded);
 
         m_playerAnimator.speed = 1.0f + Mathf.SmoothStep(0.75f, 1.0f, m_speed);
+        
+        // calculate which leg is behind, so as to leave that leg trailing in the jump animation
+        // (This code is reliant on the specific run cycle offset in our animations,
+        // and assumes one leg passes the other at the normalized clip times of 0.0 and 0.5)
+        float runCycle =
+            Mathf.Repeat(
+                m_playerAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime + m_runCycleLegOffset, 1);
+        float jumpLeg = (runCycle < 0.5f ? 1 : -1) * Mathf.Clamp((m_playerRB.velocity.magnitude / m_maxSpeed), 0.0f, 1.0f);
+        if (m_grounded)
+        {
+            m_playerAnimator.SetFloat("JumpLeg", jumpLeg);
+        }
 
-        //m_playerAudioSource.pitch = Mathf.Lerp(m_playerAudioSource.pitch, 0.985f + (m_speed / m_maxSpeed) * 0.03f, 3.0f * Time.deltaTime);   
-        //m_playerAudioSource.pitch = Mathf.Lerp(m_playerAudioSource.pitch, Mathf.Lerp(0.0f, 1.0f, (m_speed / m_maxSpeed)), 3.0f * Time.deltaTime);
+        //Foot sounds
+        if ((runCycle <= 0.1f || (runCycle >= 0.45f && runCycle <= 0.55f)) && !m_footStepsSoundEffectSource.isPlaying && m_grounded)
+        {
+            m_footStepsSoundEffectSource.pitch = Random.Range(0.9f, 1.1f);
+            //m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, Mathf.Lerp(0.0f, 1.0f, m_playerRB.velocity.magnitude));
+            m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, Mathf.Abs(m_speed / m_maxSpeed));
+            //m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, 1.0f);
+        }
     }
 
     public void SetJumpCharge (float charge)
