@@ -14,6 +14,8 @@ public class SlowBall : MonoBehaviour
 
     private Rigidbody m_ballRB;
 
+    private AudioSource m_ballAudioSource;
+
     private Vector3 m_startLocalPos;
 
     private bool m_playerDetected = false, m_stuck = false;
@@ -22,7 +24,6 @@ public class SlowBall : MonoBehaviour
 	void Start ()
     {
         m_triggerZone = GetComponentInParent<SlowBallTriggerZone>();
-
         if (m_triggerZone == null)
         {
             Debug.Log("m_triggerZone not found!");
@@ -32,6 +33,12 @@ public class SlowBall : MonoBehaviour
         if (m_player == null)
         {
             Debug.Log("m_player not found!");
+        }
+
+        m_ballAudioSource = GetComponent<AudioSource>();
+        if (m_ballAudioSource == null)
+        {
+            Debug.Log("m_ballAudioSource not found!");
         }
 
         m_playerController = m_triggerZone.GetPlayerController();
@@ -62,6 +69,7 @@ public class SlowBall : MonoBehaviour
                 {                    
                     m_ballRB.velocity = m_triggerZone.transform.TransformVector(m_startLocalPos.normalized * m_followSpeed);
                     transform.parent = null;
+                    m_ballAudioSource.Play();
                 }
                 else
                 {
@@ -83,6 +91,7 @@ public class SlowBall : MonoBehaviour
         {
             m_ballRB.velocity = Vector3.zero;
             m_playerDetected = false;
+            m_ballAudioSource.Stop();
         }
         else
         {
@@ -100,6 +109,7 @@ public class SlowBall : MonoBehaviour
 
             if (!m_stuck)
             {
+                m_ballAudioSource.Stop();
                 m_stuck = true;
                 m_playerController.AdjustSpeedMod(-0.05f);
                 transform.parent = collision.collider.gameObject.transform;

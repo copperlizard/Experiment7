@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class MainMenuPanelManager : MonoBehaviour
-{
+{    
+    private MainMenuStateManager m_mainMenuStateManager;
+
     [SerializeField]
     private GameObject m_mainMenuPanel, m_settingsPanel, m_campaignPanel, m_levelDetailsPanel;
 
@@ -12,7 +14,14 @@ public class MainMenuPanelManager : MonoBehaviour
 	// Use this for initialization
 	void Start ()
     {
-	    if (m_mainMenuPanel == null)
+        m_mainMenuStateManager = GameObject.FindGameObjectWithTag("MainMenuStateManager").GetComponent<MainMenuStateManager>();
+        if (m_mainMenuStateManager == null)
+        {
+            Debug.Log("m_mainMenuStateManager not found!");
+            return;
+        }
+
+        if (m_mainMenuPanel == null)
         {
             Debug.Log("m_mainMenuPanel not assigned!");
             return;
@@ -63,12 +72,68 @@ public class MainMenuPanelManager : MonoBehaviour
             Debug.Log("could not find m_levelDetailsAnimator!");
             return;
         }
+
+        Debug.Log("Start Panel Switch!");
+        switch (m_mainMenuStateManager.m_mainMenuState)
+        {
+            case MainMenuState.CampaignMenu:
+                OpenCampaignMap();
+                Debug.Log("OpenCampaignMap");
+                break;
+            case MainMenuState.LevelDetails:
+                OpenLevelDetails();
+                Debug.Log("OpenLevelDetails");
+                break;
+            case MainMenuState.MainMenu:
+                OpenMainMenu();
+                Debug.Log("OpenMainMenu");
+                break;
+            case MainMenuState.SettingsMenu:
+                OpenSettingsMenu();
+                Debug.Log("OpenSettingsMenu");
+                break;
+            default:
+                OpenMainMenu();
+                Debug.Log("Default"); ;
+                break;
+        }
     }
 	
 	// Update is called once per frame
 	void Update ()
     {
-		
+        /*
+		if (!m_mainMenuAnimator.GetBool("visible") &&
+        !m_settingsAnimator.GetBool("visible") &&
+        !m_campaignAnimator.GetBool("visible") &&
+        !m_levelDetailsAnimator.GetBool("visible"))
+        {
+            Debug.Log("Update Panel Switch!");
+            switch (m_mainMenuStateManager.m_mainMenuState)
+            {
+                case MainMenuState.CampaignMenu:
+                    OpenCampaignMap();
+                    Debug.Log("OpenCampaignMap");
+                    break;
+                case MainMenuState.LevelDetails:
+                    OpenLevelDetails();
+                    Debug.Log("OpenLevelDetails");
+                    break;
+                case MainMenuState.MainMenu:
+                    OpenMainMenu();
+                    Debug.Log("OpenMainMenu");
+                    break;
+                case MainMenuState.SettingsMenu:
+                    OpenSettingsMenu();
+                    Debug.Log("OpenSettingsMenu");
+                    break;
+                default:
+                    OpenMainMenu();
+                    Debug.Log("Default"); ;
+                    break;
+            }
+        }
+        */
 	}
 
     public void OpenMainMenu ()
@@ -77,6 +142,8 @@ public class MainMenuPanelManager : MonoBehaviour
         m_settingsAnimator.SetBool("visible", false);
         m_campaignAnimator.SetBool("visible", false);
         m_levelDetailsAnimator.SetBool("visible", false);
+
+        m_mainMenuStateManager.m_mainMenuState = MainMenuState.MainMenu;
     }
 
     public void OpenSettingsMenu()
@@ -85,6 +152,8 @@ public class MainMenuPanelManager : MonoBehaviour
         m_settingsAnimator.SetBool("visible", true);
         m_campaignAnimator.SetBool("visible", false);
         m_levelDetailsAnimator.SetBool("visible", false);
+
+        m_mainMenuStateManager.m_mainMenuState = MainMenuState.SettingsMenu;
     }
 
     public void OpenCampaignMap()
@@ -93,6 +162,8 @@ public class MainMenuPanelManager : MonoBehaviour
         m_settingsAnimator.SetBool("visible", false);
         m_campaignAnimator.SetBool("visible", true);
         m_levelDetailsAnimator.SetBool("visible", false);
+
+        m_mainMenuStateManager.m_mainMenuState = MainMenuState.CampaignMenu;
     }
 
     public void OpenLevelDetails()
@@ -101,5 +172,7 @@ public class MainMenuPanelManager : MonoBehaviour
         m_settingsAnimator.SetBool("visible", false);
         m_campaignAnimator.SetBool("visible", true);
         m_levelDetailsAnimator.SetBool("visible", true);
+
+        m_mainMenuStateManager.m_mainMenuState = MainMenuState.LevelDetails;
     }
 }
