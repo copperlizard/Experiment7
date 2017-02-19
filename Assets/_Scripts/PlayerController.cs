@@ -196,7 +196,7 @@ public class PlayerController : MonoBehaviour
         // Reverse        
         if (Vector3.Dot(move3d.normalized, -transform.forward) > 0.45f)
         {
-            m_speed = -Mathf.Lerp(m_playerRB.velocity.magnitude, (m_maxSpeed * 0.5f) * move.magnitude * tiltFactor, 7.5f * Time.deltaTime);
+            m_speed = -Mathf.Lerp(m_playerRB.velocity.magnitude, (m_maxSpeed * 0.5f) * move.magnitude * tiltFactor * m_speedMod, 7.5f * Time.deltaTime);
             //m_speed = m_speed * 0.5f;
             //m_speed = -m_speed;
         }

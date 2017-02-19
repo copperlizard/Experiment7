@@ -11,6 +11,8 @@ public class MainMenuPanelManager : MonoBehaviour
 
     private Animator m_mainMenuAnimator, m_settingsAnimator, m_campaignAnimator, m_levelDetailsAnimator;
 
+    private MenuPanelInput m_campaignMenuInput;
+
 	// Use this for initialization
 	void Start ()
     {
@@ -69,32 +71,38 @@ public class MainMenuPanelManager : MonoBehaviour
         m_levelDetailsAnimator = m_levelDetailsPanel.GetComponent<Animator>();
         if (m_levelDetailsAnimator == null)
         {
-            Debug.Log("could not find m_levelDetailsAnimator!");
+            Debug.Log("m_levelDetailsAnimator not found!");
             return;
         }
 
-        Debug.Log("Start Panel Switch!");
+        m_campaignMenuInput = m_campaignPanel.GetComponent<MenuPanelInput>();
+        if (m_campaignMenuInput == null)
+        {
+            Debug.Log("m_campaignMenuInput not found!");
+        }
+
+        //Debug.Log("Start Panel Switch!");
         switch (m_mainMenuStateManager.m_mainMenuState)
         {
             case MainMenuState.CampaignMenu:
                 OpenCampaignMap();
-                Debug.Log("OpenCampaignMap");
+                //Debug.Log("OpenCampaignMap");
                 break;
             case MainMenuState.LevelDetails:
                 OpenLevelDetails();
-                Debug.Log("OpenLevelDetails");
+                //Debug.Log("OpenLevelDetails");
                 break;
             case MainMenuState.MainMenu:
                 OpenMainMenu();
-                Debug.Log("OpenMainMenu");
+                //Debug.Log("OpenMainMenu");
                 break;
             case MainMenuState.SettingsMenu:
                 OpenSettingsMenu();
-                Debug.Log("OpenSettingsMenu");
+                //Debug.Log("OpenSettingsMenu");
                 break;
             default:
                 OpenMainMenu();
-                Debug.Log("Default"); ;
+                //Debug.Log("Default"); ;
                 break;
         }
     }
@@ -102,38 +110,7 @@ public class MainMenuPanelManager : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
     {
-        /*
-		if (!m_mainMenuAnimator.GetBool("visible") &&
-        !m_settingsAnimator.GetBool("visible") &&
-        !m_campaignAnimator.GetBool("visible") &&
-        !m_levelDetailsAnimator.GetBool("visible"))
-        {
-            Debug.Log("Update Panel Switch!");
-            switch (m_mainMenuStateManager.m_mainMenuState)
-            {
-                case MainMenuState.CampaignMenu:
-                    OpenCampaignMap();
-                    Debug.Log("OpenCampaignMap");
-                    break;
-                case MainMenuState.LevelDetails:
-                    OpenLevelDetails();
-                    Debug.Log("OpenLevelDetails");
-                    break;
-                case MainMenuState.MainMenu:
-                    OpenMainMenu();
-                    Debug.Log("OpenMainMenu");
-                    break;
-                case MainMenuState.SettingsMenu:
-                    OpenSettingsMenu();
-                    Debug.Log("OpenSettingsMenu");
-                    break;
-                default:
-                    OpenMainMenu();
-                    Debug.Log("Default"); ;
-                    break;
-            }
-        }
-        */
+        
 	}
 
     public void OpenMainMenu ()
@@ -163,6 +140,8 @@ public class MainMenuPanelManager : MonoBehaviour
         m_campaignAnimator.SetBool("visible", true);
         m_levelDetailsAnimator.SetBool("visible", false);
 
+        m_campaignMenuInput.ResetPanelSelection();
+
         m_mainMenuStateManager.m_mainMenuState = MainMenuState.CampaignMenu;
     }
 
@@ -172,7 +151,7 @@ public class MainMenuPanelManager : MonoBehaviour
         m_settingsAnimator.SetBool("visible", false);
         m_campaignAnimator.SetBool("visible", true);
         m_levelDetailsAnimator.SetBool("visible", true);
-
+        
         m_mainMenuStateManager.m_mainMenuState = MainMenuState.LevelDetails;
     }
 }

@@ -23,6 +23,10 @@ public class CameraController : MonoBehaviour
     [Range(0.0f, 180.0f)]
     private float m_tiltMax = 180.0f, m_panMax = 180.0f;
 
+    [SerializeField]
+    private float m_cameraClearanceRadius = 0.2f;
+    //private float m_intersectionSepDist = 0.1f;
+
     private float m_pan = 0.0f, m_tilt = 0.0f;
 
     // Use this for initialization
@@ -63,11 +67,13 @@ public class CameraController : MonoBehaviour
 
         // Obstructed
         RaycastHit hit;
-        if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, LayerMask.NameToLayer("Player") | LayerMask.NameToLayer("Projectile")))
+        //if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, LayerMask.GetMask("Player", "Projectile")))
+        if (Physics.SphereCast(lookTar, m_cameraClearanceRadius, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.GetMask("Player", "Projectile", "PlayerBody")))
         {
             //Debug.Log("camera view obstructed by " + hit.collider.gameObject.name + "!");
-
-            tarPos = hit.point;
+            
+            tarPos = hit.point + hit.normal * m_cameraClearanceRadius;
+            //tarPos = hit.point;
         }        
 
         transform.position = Vector3.Lerp(transform.position, tarPos, 5.0f * Time.deltaTime);
@@ -82,5 +88,5 @@ public class CameraController : MonoBehaviour
 
         m_pan = Mathf.Lerp(m_pan, pan, 3.0f * Time.deltaTime);
         m_tilt = Mathf.Lerp(m_tilt, tilt, 3.0f * Time.deltaTime);
-    }
+    }    
 }

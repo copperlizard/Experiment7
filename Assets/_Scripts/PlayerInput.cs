@@ -15,7 +15,7 @@ public class PlayerInput : MonoBehaviour
 
     private float m_jumpCharge = 0.0f;
 
-    private bool m_jumpCharging = false, m_jump = false, m_pauseToggle = false, m_confirmingBack = false;
+    private bool m_jumpCharging = false, m_jump = false, m_pauseJumpLock = false, m_pauseToggle = false, m_confirmingBack = false;
 
 	// Use this for initialization
 	void Start ()
@@ -37,9 +37,9 @@ public class PlayerInput : MonoBehaviour
 	
 	// Update is called once per frame
 	void Update ()
-    {
+    {   
         GetInput();
-	}
+    }
 
     private void FixedUpdate()
     {   
@@ -50,6 +50,20 @@ public class PlayerInput : MonoBehaviour
 
     private void GetInput ()
     {
+        if (m_gameManager.IsPaused()) //keep player from jumping after pause screen
+        {           
+            m_pauseJumpLock = true;
+            //Debug.Log("jump locked!");            
+        }
+        else if (m_pauseJumpLock)
+        {
+            if (Input.GetButtonUp("Jump"))
+            {
+                m_pauseJumpLock = false;
+                //Debug.Log("jump released!");
+            }
+        }
+
         if (Input.GetButtonDown("Back") && !m_confirmingBack)
         {
             StartCoroutine(ConfirmBack());
@@ -68,7 +82,7 @@ public class PlayerInput : MonoBehaviour
         m_move.x = Input.GetAxis("Horizontal");
         m_move.y = Input.GetAxis("Vertical");
 
-        if (Input.GetButton("Jump") && !m_jumpCharging && m_playerController.PlayerIsGrounded())
+        if (Input.GetButtonDown("Jump") && !m_jumpCharging && m_playerController.PlayerIsGrounded() && !m_pauseJumpLock)
         {
             StartCoroutine(JumpCharge());
             m_jump = true;
