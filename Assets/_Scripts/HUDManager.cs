@@ -70,14 +70,14 @@ public class HUDManager : MonoBehaviour
     {
         m_dashGauge.fillAmount = m_playerController.GetAirDashes() / 3.0f;
 
-        float speed = m_playerController.getSpeed() / m_playerController.GetMaxSpeed();
+        float speed = m_playerController.GetSpeed() / m_playerController.GetMaxSpeed();
         m_speedGauge.fillAmount = Mathf.Min(1.0f, speed);
         m_speedGauge.color = Color.green * (1.0f - speed) + Color.yellow * speed;
         m_speedGauge.color = new Color(m_speedGauge.color.r, m_speedGauge.color.g, m_speedGauge.color.b, 0.58f);
 
         m_excessSpeedGauge.fillAmount = Mathf.Min(1.0f, speed - 1.0f);
 
-        float mph = Mathf.Abs(m_playerController.getSpeed()) * 2.23694f;
+        float mph = Mathf.Abs(m_playerController.GetSpeed()) * 2.23694f;
         m_speedText.text = string.Format("{0:n0}mph", mph);
 
         TimeSpan t = TimeSpan.FromSeconds(m_gameManager.GetTimeElapsed());

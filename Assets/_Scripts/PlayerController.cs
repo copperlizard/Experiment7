@@ -24,10 +24,10 @@ public class PlayerController : MonoBehaviour
     private RaycastHit m_groundAt;
 
     private Vector3 m_groundParallel;
-    
-    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f, m_speedMod = 1.0f;
 
-    private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false, m_stalled = false;
+    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f;
+
+    private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false, m_stalled = false, m_shielding = false;
 
 	// Use this for initialization
 	void Start ()
@@ -69,6 +69,7 @@ public class PlayerController : MonoBehaviour
 	void Update ()
     {        
         m_airDashes = Mathf.Min(3.0f, m_airDashes + 0.1f * Time.deltaTime);
+        m_shieldEnergy = Mathf.Min(1.0f, m_shieldEnergy + 0.01f * Time.deltaTime);
 
         m_playerAnimator.SetFloat("Speed", m_speed / m_maxSpeed);
         m_playerAnimator.SetFloat("Turn", m_turn);
@@ -99,6 +100,22 @@ public class PlayerController : MonoBehaviour
             //m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, Mathf.Lerp(0.0f, 1.0f, m_playerRB.velocity.magnitude));
             m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, Mathf.Abs(m_speed / m_maxSpeed));
             //m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, 1.0f);
+        }
+
+        if (m_shielding)
+        {
+            m_playerAnimator.SetLayerWeight(1, Mathf.Lerp(m_playerAnimator.GetLayerWeight(1), 1.0f, 3.0f * Time.deltaTime));
+        }
+        else if (m_playerAnimator.GetLayerWeight(1) > 0.0f)
+        {
+            if (m_playerAnimator.GetLayerWeight(1) < 0.001f)
+            {
+                m_playerAnimator.SetLayerWeight(1, 0.0f);
+            }
+            else
+            {
+                m_playerAnimator.SetLayerWeight(1, Mathf.Lerp(m_playerAnimator.GetLayerWeight(1), 0.0f, 3.0f * Time.deltaTime));
+            }
         }
     }
 
@@ -174,6 +191,11 @@ public class PlayerController : MonoBehaviour
 
     public void Move (Vector2 move)
     {
+        if (m_shielding)
+        {
+            return;
+        }
+
         if (!m_jumping)
         {
             GroundCheck();
@@ -181,16 +203,21 @@ public class PlayerController : MonoBehaviour
 
         move = move.normalized * Mathf.Min(1.0f, move.magnitude); // Make keyboard input look like joystick input (joystick unaffected)
 
-        m_turn = move.x; // For animator
+        m_turn = move.x; // For animator        
 
-        float tiltFactor = 1.0f;
-
+        //Playre relative movement
         Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
         move3d = transform.rotation * move3d;
 
-        tiltFactor *= Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.75f, Mathf.Abs(Vector3.Dot(move3d, transform.forward))));
+        //Add camera relativity (a bit smoother, but causes issues with camera intersections steering the player...)       
+        //Vector3 camDir = transform.InverseTransformDirection(Vector3.ProjectOnPlane(m_camera.transform.forward, transform.up).normalized);        
+        //Quaternion camRot = Quaternion.LookRotation(camDir);       
+        //move3d = camRot * move3d;
 
-        m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 7.5f * Time.deltaTime);
+        //Slow player in tight turns
+        float tiltFactor = Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.65f, Mathf.Abs(Vector3.Dot(move3d, transform.forward))));
+
+        m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
         //m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.magnitude * tiltFactor, 7.5f * Time.deltaTime);
 
         // Reverse        
@@ -230,7 +257,7 @@ public class PlayerController : MonoBehaviour
         {
             Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f)?1.0f:-1.0f), transform.up).normalized, transform.up);
 
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.8f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
         }
     }
 
@@ -264,9 +291,9 @@ public class PlayerController : MonoBehaviour
         else
         {
             Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
+            //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up).normalized, transform.up);
 
-            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.85f * Mathf.SmoothStep(0.0f, 1.0f, m_playerRB.velocity.magnitude / m_maxSpeed)));
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (1.0f - 0.85f * Mathf.SmoothStep(0.0f, 1.0f, m_speed)));
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * 0.5f * (1.0f - 0.775f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
         }
     }
 
@@ -307,9 +334,8 @@ public class PlayerController : MonoBehaviour
             Quaternion rot = Quaternion.LookRotation(m_playerRB.velocity.normalized);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 2.0f);
 
-            //float fly = Vector3.Dot(transform.forward, m_playerRB.velocity.normalized);
-            float fly = Mathf.Lerp(m_flying, 1.0f, m_flightTransitionRate * Time.deltaTime);
-            //fly *= Mathf.Min(m_speed / m_maxSpeed * 0.5f, 1.0f);
+            //float fly = Mathf.Lerp(m_flying, 1.0f, m_flightTransitionRate * Time.deltaTime);
+            float fly = 1.0f;
 
             if (Physics.Raycast(transform.position + transform.up * 0.5f, Vector3.Lerp(-transform.up, transform.forward, (m_speed / m_maxSpeed) * 0.5f), out m_groundAt))
             {
@@ -369,6 +395,75 @@ public class PlayerController : MonoBehaviour
         yield return null;
     }
 
+    public void Shield (bool state, Vector2 move)
+    {
+        if (m_shieldEnergy < 1.0f)
+        {
+            m_shielding = false;
+            return;
+        }
+
+        if (state && !m_shielding)
+        {
+            StartCoroutine(Shielding());
+            m_shielding = state;
+        }
+        else
+        {
+            m_shielding = state;
+        }
+
+        if (m_shielding)
+        {
+            ShieldMove(move);
+        }
+    }
+
+    private void ShieldMove (Vector2 move)
+    {
+        move = move.normalized * Mathf.Min(1.0f, move.magnitude); // Make keyboard input look like joystick input (joystick unaffected)
+
+        m_turn = move.x; // For animator        
+
+        //Playre relative movement
+        Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
+        move3d = transform.rotation * move3d;
+
+        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, move3d, 3.0f * Time.deltaTime);
+
+        if (move3d.magnitude < 0.05)
+        {
+            return;
+        }
+        else
+        {
+            Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
+            //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up).normalized, transform.up);
+
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.775f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+        }
+    }
+
+    private IEnumerator Shielding()
+    {
+        if (m_playerRB.useGravity)
+        {
+            m_playerRB.useGravity = false; //letting ground check reset gravity...
+        }
+
+        //Visualize shield
+
+        do //wait for enery to run out or button release
+        {
+            m_shieldEnergy = Mathf.Lerp(m_shieldEnergy, 0.0f, 0.03f * Time.deltaTime);
+            yield return null;
+        } while (m_shielding && m_shieldEnergy > 0.0f);
+
+        //DeVisualize shield
+        
+        yield return null;
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.layer == LayerMask.NameToLayer("Default")) // push of level
@@ -382,7 +477,7 @@ public class PlayerController : MonoBehaviour
         return m_grounded;
     }
 
-    public float getSpeed ()
+    public float GetSpeed ()
     {
         return m_speed;
     }

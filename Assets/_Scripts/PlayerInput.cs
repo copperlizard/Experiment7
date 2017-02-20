@@ -103,6 +103,8 @@ public class PlayerInput : MonoBehaviour
         {
             m_jumpCharge = 0.0f;
         }
+
+        m_playerController.Shield(Input.GetButton("Shield"), m_move);
     }
 
     private IEnumerator ConfirmBack ()

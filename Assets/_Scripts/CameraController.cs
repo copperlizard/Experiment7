@@ -68,7 +68,7 @@ public class CameraController : MonoBehaviour
         // Obstructed
         RaycastHit hit;
         //if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, LayerMask.GetMask("Player", "Projectile")))
-        if (Physics.SphereCast(lookTar, m_cameraClearanceRadius, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.GetMask("Player", "Projectile", "PlayerBody")))
+        if (Physics.SphereCast(lookTar, m_cameraClearanceRadius, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.GetMask("Player", "Projectile", "PlayerBody"), QueryTriggerInteraction.Ignore))
         {
             //Debug.Log("camera view obstructed by " + hit.collider.gameObject.name + "!");
             
