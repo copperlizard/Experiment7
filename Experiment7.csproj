@@ -122,6 +122,7 @@
     <Compile Include="Assets\_Scripts\BasicRotator.cs" />
     <Compile Include="Assets\_Scripts\CameraController.cs" />
     <Compile Include="Assets\_Scripts\CameraInput.cs" />
+    <Compile Include="Assets\_Scripts\Destructible.cs" />
     <Compile Include="Assets\_Scripts\GameManager.cs" />
     <Compile Include="Assets\_Scripts\GoalManager.cs" />
     <Compile Include="Assets\_Scripts\HUDManager.cs" />
@@ -131,6 +132,7 @@
     <Compile Include="Assets\_Scripts\MenuPanelInput.cs" />
     <Compile Include="Assets\_Scripts\PlayerController.cs" />
     <Compile Include="Assets\_Scripts\PlayerInput.cs" />
+    <Compile Include="Assets\_Scripts\PlayerShield.cs" />
     <Compile Include="Assets\_Scripts\QuitButton.cs" />
     <Compile Include="Assets\_Scripts\SlowBall.cs" />
     <Compile Include="Assets\_Scripts\SlowBallTriggerZone.cs" />

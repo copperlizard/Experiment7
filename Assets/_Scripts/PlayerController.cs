@@ -10,6 +10,9 @@ public class PlayerController : MonoBehaviour
         m_dashDuration = 1.0f, m_groundCheckDist = 0.25f, m_minFlightHeight = 1.0f, m_flightTransitionRate = 20.0f,
         m_runCycleLegOffset = 0.0f;
 
+    [SerializeField]
+    private GameObject m_playerShield;
+
     private Animator m_playerAnimator;
 
     private Camera m_camera;
@@ -31,7 +34,12 @@ public class PlayerController : MonoBehaviour
 
 	// Use this for initialization
 	void Start ()
-    {
+    {        
+        if (m_playerShield == null)
+        {
+            Debug.Log("m_playerShield not assigned!");
+        }
+
         m_playerRB = GetComponent<Rigidbody>();
         if (m_playerRB == null)
         {
@@ -102,9 +110,10 @@ public class PlayerController : MonoBehaviour
             //m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, 1.0f);
         }
 
+        m_playerAnimator.SetBool("Shielding", m_shielding);
         if (m_shielding)
         {
-            m_playerAnimator.SetLayerWeight(1, Mathf.Lerp(m_playerAnimator.GetLayerWeight(1), 1.0f, 3.0f * Time.deltaTime));
+            m_playerAnimator.SetLayerWeight(1, Mathf.Lerp(m_playerAnimator.GetLayerWeight(1), 1.0f, 10.0f * Time.deltaTime));
         }
         else if (m_playerAnimator.GetLayerWeight(1) > 0.0f)
         {
@@ -114,7 +123,7 @@ public class PlayerController : MonoBehaviour
             }
             else
             {
-                m_playerAnimator.SetLayerWeight(1, Mathf.Lerp(m_playerAnimator.GetLayerWeight(1), 0.0f, 3.0f * Time.deltaTime));
+                m_playerAnimator.SetLayerWeight(1, Mathf.Lerp(m_playerAnimator.GetLayerWeight(1), 0.0f, 10.0f * Time.deltaTime));
             }
         }
     }
@@ -133,7 +142,6 @@ public class PlayerController : MonoBehaviour
                 m_grounded = true;
 
                 // Check for stalled wallrun   
-                //if (m_playerRB.velocity.magnitude < 0.5f * m_maxSpeed && Vector3.Dot(transform.up, Vector3.up) < 0.5f)
                 if (m_speed < 0.5f * m_maxSpeed && Vector3.Dot(transform.up, Vector3.up) < 0.5f)
                 {
                     m_grounded = false;
@@ -168,14 +176,10 @@ public class PlayerController : MonoBehaviour
 
         //Debug.DrawRay(m_groundAt.point, m_groundAt.normal, Color.green);
 
-        //Vector3 alignedForward = -Vector3.Cross(Vector3.Cross(transform.forward, m_groundAt.normal), m_groundAt.normal);
         m_groundParallel = -Vector3.Cross(Vector3.Cross(transform.forward, m_groundAt.normal), m_groundAt.normal);
 
         //Debug.DrawRay(m_groundAt.point, alignedForward, Color.blue);
-
-
-
-        //Quaternion alignedRot = Quaternion.LookRotation(alignedForward, m_groundAt.normal);
+        
         Quaternion alignedRot = Quaternion.LookRotation(m_groundParallel, m_groundAt.normal);
         transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 10.0f * Time.deltaTime);
 
@@ -191,21 +195,16 @@ public class PlayerController : MonoBehaviour
 
     public void Move (Vector2 move)
     {
-        if (m_shielding)
-        {
-            return;
-        }
-
         if (!m_jumping)
         {
             GroundCheck();
-        }       
+        }
 
         move = move.normalized * Mathf.Min(1.0f, move.magnitude); // Make keyboard input look like joystick input (joystick unaffected)
 
         m_turn = move.x; // For animator        
 
-        //Playre relative movement
+        //Player relative movement
         Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
         move3d = transform.rotation * move3d;
 
@@ -217,15 +216,27 @@ public class PlayerController : MonoBehaviour
         //Slow player in tight turns
         float tiltFactor = Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.65f, Mathf.Abs(Vector3.Dot(move3d, transform.forward))));
 
-        m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
+        //m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
+        //m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
         //m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.magnitude * tiltFactor, 7.5f * Time.deltaTime);
 
         // Reverse        
         if (Vector3.Dot(move3d.normalized, -transform.forward) > 0.45f)
         {
-            m_speed = -Mathf.Lerp(m_playerRB.velocity.magnitude, (m_maxSpeed * 0.5f) * move.magnitude * tiltFactor * m_speedMod, 7.5f * Time.deltaTime);
+            //m_speed = -Mathf.Lerp(m_playerRB.velocity.magnitude, (m_maxSpeed * 0.5f) * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
+            m_speed = Mathf.Lerp(m_speed, -1.0f * (m_maxSpeed * 0.5f) * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
             //m_speed = m_speed * 0.5f;
             //m_speed = -m_speed;
+        }
+        else
+        {
+            m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
+        }
+        
+        if (m_shielding)
+        {
+            ShieldMove(move);
+            return;
         }
 
         if (m_grounded)
@@ -395,7 +406,7 @@ public class PlayerController : MonoBehaviour
         yield return null;
     }
 
-    public void Shield (bool state, Vector2 move)
+    public void Shield (bool state)
     {
         if (m_shieldEnergy < 1.0f)
         {
@@ -406,21 +417,22 @@ public class PlayerController : MonoBehaviour
         if (state && !m_shielding)
         {
             StartCoroutine(Shielding());
-            m_shielding = state;
+            m_shielding = true;
+            m_grounded = false;
         }
-        else
+        else if (!state)
         {
-            m_shielding = state;
-        }
-
-        if (m_shielding)
-        {
-            ShieldMove(move);
+            m_shielding = false;
         }
     }
 
     private void ShieldMove (Vector2 move)
     {
+        if (m_playerRB.useGravity)
+        {
+            m_playerRB.useGravity = false;
+        }
+
         move = move.normalized * Mathf.Min(1.0f, move.magnitude); // Make keyboard input look like joystick input (joystick unaffected)
 
         m_turn = move.x; // For animator        
@@ -429,7 +441,9 @@ public class PlayerController : MonoBehaviour
         Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
         move3d = transform.rotation * move3d;
 
-        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, move3d, 3.0f * Time.deltaTime);
+        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, move3d * 3.0f, 3.0f * Time.deltaTime);
+
+        m_speed = m_playerRB.velocity.magnitude;
 
         if (move3d.magnitude < 0.05)
         {
@@ -440,7 +454,7 @@ public class PlayerController : MonoBehaviour
             Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
             //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up).normalized, transform.up);
 
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.775f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 0.5f * m_speedMod * (1.0f - 0.775f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
         }
     }
 
@@ -452,15 +466,23 @@ public class PlayerController : MonoBehaviour
         }
 
         //Visualize shield
+        m_playerShield.SetActive(true);
 
         do //wait for enery to run out or button release
         {
-            m_shieldEnergy = Mathf.Lerp(m_shieldEnergy, 0.0f, 0.03f * Time.deltaTime);
+            if (m_playerShield.transform.localScale.x < 1.0f)
+            {
+                m_playerShield.transform.localScale = Vector3.Lerp(m_playerShield.transform.localScale, Vector3.one, 7.5f * Time.deltaTime);
+            }
+
+            //m_shieldEnergy = Mathf.Lerp(m_shieldEnergy, 0.0f, 0.03f * Time.deltaTime);
             yield return null;
         } while (m_shielding && m_shieldEnergy > 0.0f);
 
         //DeVisualize shield
-        
+        m_playerShield.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+        m_playerShield.SetActive(false);
+
         yield return null;
     }
 

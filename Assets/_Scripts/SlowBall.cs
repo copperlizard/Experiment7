@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SlowBall : MonoBehaviour
+public class SlowBall : Destructible
 {
     [SerializeField]
     private float m_followSpeed = 5.0f, m_maxFollowDist = 300.0f;
 
     private SlowBallTriggerZone m_triggerZone;
 
-    private GameObject m_player;
+    private GameObject m_player, m_sphere, m_destruction;
     private PlayerController m_playerController;
 
     private Rigidbody m_ballRB;
@@ -20,9 +20,37 @@ public class SlowBall : MonoBehaviour
 
     private bool m_playerDetected = false, m_stuck = false;
 
-	// Use this for initialization
-	void Start ()
+    public override void Destruct()
     {
+        m_sphere.SetActive(false);
+
+        m_destruction.SetActive(true);
+        
+        StartCoroutine(WaitForSmoke());        
+    }
+
+    private IEnumerator WaitForSmoke ()
+    {
+        yield return new WaitForSeconds(0.25f);
+        m_destruction.SetActive(false);        
+        Destroy(gameObject);
+    }
+
+    // Use this for initialization
+    void Start ()
+    {
+        m_sphere = transform.GetChild(0).gameObject;
+        if (m_sphere == null)
+        {
+            Debug.Log("m_sphere not found!");
+        }
+
+        m_destruction = transform.GetChild(1).gameObject;
+        if (m_destruction == null)
+        {
+            Debug.Log("m_destruction not found!");
+        }
+        
         m_triggerZone = GetComponentInParent<SlowBallTriggerZone>();
         if (m_triggerZone == null)
         {

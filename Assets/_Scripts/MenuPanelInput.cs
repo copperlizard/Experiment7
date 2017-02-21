@@ -10,7 +10,7 @@ public class MenuPanelInput : MonoBehaviour
 
     private Selectable m_selected;
 
-    private bool m_panelInputActive = false, m_hold = false;
+    private bool m_panelInputActive = false;
 
 	// Use this for initialization
 	void Start ()

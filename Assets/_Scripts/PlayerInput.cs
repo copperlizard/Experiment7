@@ -82,7 +82,7 @@ public class PlayerInput : MonoBehaviour
         m_move.x = Input.GetAxis("Horizontal");
         m_move.y = Input.GetAxis("Vertical");
 
-        if (Input.GetButtonDown("Jump") && !m_jumpCharging && m_playerController.PlayerIsGrounded() && !m_pauseJumpLock)
+        if (Input.GetButtonDown("Jump") && !m_jumpCharging && m_playerController.PlayerIsGrounded() && !m_pauseJumpLock && !Input.GetButton("Shield"))
         {
             StartCoroutine(JumpCharge());
             m_jump = true;
@@ -103,8 +103,14 @@ public class PlayerInput : MonoBehaviour
         {
             m_jumpCharge = 0.0f;
         }
-
-        m_playerController.Shield(Input.GetButton("Shield"), m_move);
+        else if (Input.GetButtonDown("Shield") && !m_gameManager.IsPaused())
+        {
+            m_playerController.Shield(true);
+        }
+        else if (Input.GetButtonUp("Shield") && !m_gameManager.IsPaused())
+        {
+            m_playerController.Shield(false);
+        }
     }
 
     private IEnumerator ConfirmBack ()
