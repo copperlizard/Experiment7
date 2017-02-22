@@ -7,6 +7,9 @@ public class SlowBall : Destructible
     [SerializeField]
     private float m_followSpeed = 5.0f, m_maxFollowDist = 300.0f;
 
+    [SerializeField]
+    private AudioClip m_destructionSound;
+
     private SlowBallTriggerZone m_triggerZone;
 
     private GameObject m_player, m_sphere, m_destruction;
@@ -31,6 +34,7 @@ public class SlowBall : Destructible
 
     private IEnumerator WaitForSmoke ()
     {
+        m_ballAudioSource.PlayOneShot(m_destructionSound);
         yield return new WaitForSeconds(0.25f);
         m_destruction.SetActive(false);        
         Destroy(gameObject);
@@ -39,6 +43,11 @@ public class SlowBall : Destructible
     // Use this for initialization
     void Start ()
     {
+        if (m_destructionSound == null)
+        {
+            Debug.Log("m_destructionSound not assigned!");
+        }
+
         m_sphere = transform.GetChild(0).gameObject;
         if (m_sphere == null)
         {

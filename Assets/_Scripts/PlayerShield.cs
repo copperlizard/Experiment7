@@ -4,11 +4,16 @@ using UnityEngine;
 
 public class PlayerShield : MonoBehaviour
 {
+    private PlayerController m_playerController;
 
 	// Use this for initialization
 	void Start ()
     {
-		
+        m_playerController = GetComponentInParent<PlayerController>();
+        if (m_playerController == null)
+        {
+            Debug.Log("m_playerController not found!");
+        }
 	}
 	
 	// Update is called once per frame
@@ -24,6 +29,11 @@ public class PlayerShield : MonoBehaviour
 
                 if (destroyable != null)
                 {
+                    if (hitColliders[i].gameObject.tag == "SlowBall")
+                    {
+                        m_playerController.AdjustSpeedMod(0.05f);
+                    }
+                    
                     destroyable.Destruct();
                 }
             }
