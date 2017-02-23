@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class HUDManager : MonoBehaviour
 {
     [SerializeField]
-    private Image m_speedGauge, m_excessSpeedGauge, m_dashGauge;
+    private Image m_speedGauge, m_excessSpeedGauge, m_dashGauge, m_shieldGauge;
 
     [SerializeField]
     private Text m_speedText, m_timeText;
@@ -51,6 +51,11 @@ public class HUDManager : MonoBehaviour
             Debug.Log("m_speedGauge not assigned!");
         }
 
+        if (m_shieldGauge == null)
+        {
+            Debug.Log("m_shieldGauge not assigned!");
+        }
+
         m_player = GameObject.FindGameObjectWithTag("Player");
 
         if (m_player == null)
@@ -76,6 +81,8 @@ public class HUDManager : MonoBehaviour
         m_speedGauge.color = new Color(m_speedGauge.color.r, m_speedGauge.color.g, m_speedGauge.color.b, 0.58f);
 
         m_excessSpeedGauge.fillAmount = Mathf.Min(1.0f, speed - 1.0f);
+
+        m_shieldGauge.fillAmount = m_playerController.GetShieldEnergy();
 
         float mph = Mathf.Abs(m_playerController.GetSpeed()) * 2.23694f;
         m_speedText.text = string.Format("{0:n0}mph", mph);

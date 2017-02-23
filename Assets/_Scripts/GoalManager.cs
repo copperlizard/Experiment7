@@ -6,6 +6,8 @@ public class GoalManager : MonoBehaviour
 {
     private GameManager m_gameManager;
 
+    private PlayerController m_playerController;
+
 	// Use this for initialization
 	void Start ()
     {
@@ -14,7 +16,13 @@ public class GoalManager : MonoBehaviour
         {
             Debug.Log("m_gameManager not found!");
         }
-	}
+
+        m_playerController = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+        if (m_playerController == null)
+        {
+            Debug.Log("m_playerController not found!");
+        }
+    }
 	
 	// Update is called once per frame
 	void Update ()
@@ -26,7 +34,9 @@ public class GoalManager : MonoBehaviour
     {
         if (other.tag == "Player")
         {
-            Debug.Log("GOOOOOOOOOAAAAALLLLLLLL!!!!!!!!");
+            Debug.Log("goaaal!");
+
+            m_playerController.FreeFly();
 
             m_gameManager.LevelFinished();
         }

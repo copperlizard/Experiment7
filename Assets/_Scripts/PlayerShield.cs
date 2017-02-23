@@ -40,7 +40,7 @@ public class PlayerShield : MonoBehaviour
         }
 	}
 
-    private void OnTriggerStay(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         Destructible destroyable = (Destructible)other.GetComponent<SlowBall>();
 

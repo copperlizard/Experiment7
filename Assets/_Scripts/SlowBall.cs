@@ -34,7 +34,7 @@ public class SlowBall : Destructible
 
     private IEnumerator WaitForSmoke ()
     {
-        m_ballAudioSource.PlayOneShot(m_destructionSound);
+        m_ballAudioSource.PlayOneShot(m_destructionSound, 0.5f);
         yield return new WaitForSeconds(0.25f);
         m_destruction.SetActive(false);        
         Destroy(gameObject);
@@ -148,7 +148,12 @@ public class SlowBall : Destructible
             {
                 m_ballAudioSource.Stop();
                 m_stuck = true;
-                m_playerController.AdjustSpeedMod(-0.05f);
+
+                if (!m_playerController.PlayerIsShielded())
+                {
+                    m_playerController.AdjustSpeedMod(-0.05f);
+                }
+                
                 transform.parent = collision.collider.gameObject.transform;
                 Destroy(m_ballRB);
 

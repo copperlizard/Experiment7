@@ -13,6 +13,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private GameObject m_playerShield;
 
+    [SerializeField]
+    private AudioClip m_airDashSound;
+
     private Animator m_playerAnimator;
 
     private Camera m_camera;
@@ -30,7 +33,7 @@ public class PlayerController : MonoBehaviour
 
     private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f;
 
-    private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false, m_stalled = false, m_shielding = false;
+    private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false, m_stalled = false, m_shielding = false, m_freeFly = false;
 
 	// Use this for initialization
 	void Start ()
@@ -38,6 +41,11 @@ public class PlayerController : MonoBehaviour
         if (m_playerShield == null)
         {
             Debug.Log("m_playerShield not assigned!");
+        }
+
+        if (m_airDashSound == null)
+        {
+            Debug.Log("m_airDashSound not assigned!");
         }
 
         m_playerRB = GetComponent<Rigidbody>();
@@ -77,7 +85,11 @@ public class PlayerController : MonoBehaviour
 	void Update ()
     {        
         m_airDashes = Mathf.Min(3.0f, m_airDashes + 0.1f * Time.deltaTime);
-        m_shieldEnergy = Mathf.Min(1.0f, m_shieldEnergy + 0.01f * Time.deltaTime);
+
+        if (!m_shielding)
+        {
+            m_shieldEnergy = Mathf.Min(1.0f, m_shieldEnergy + 0.15f * Time.deltaTime);
+        }        
 
         m_playerAnimator.SetFloat("Speed", m_speed / m_maxSpeed);
         m_playerAnimator.SetFloat("Turn", m_turn);
@@ -133,11 +145,51 @@ public class PlayerController : MonoBehaviour
         m_jumpCharge = charge;
     }
 
+    private IEnumerator FallRecover ()
+    {
+        //Debug.Log("fallen!");
+
+        float startmod = m_speedMod;
+        float stagger = 0.5f;
+        m_speedMod -= stagger;
+
+        if (m_speedMod < 0.0f)
+        {
+            m_speedMod = 0.0f;
+        }
+
+        while (stagger > 0.0f)
+        {
+            float delta = 0.25f * Time.deltaTime;
+            m_speedMod += delta;
+            stagger -= delta;
+            yield return null;
+        }
+
+        m_speedMod = startmod;
+
+        //Debug.Log("fall recovered!");
+
+        yield return null;
+    }
+
     private void GroundCheck ()
-    {        
+    {
         if (Physics.Raycast(transform.position + transform.up * 0.5f, -transform.up, out m_groundAt, m_groundCheckDist + 0.5f, LayerMask.NameToLayer("PlayerBody"), QueryTriggerInteraction.Ignore))
         {
-            if (!m_stalled)
+            
+            if (!m_grounded && m_playerRB.velocity.y <= -m_maxSpeed * 0.5f) // Already falling fast
+            {
+                //Debug.Log("fast fall!");
+
+                if (Vector3.Dot(m_groundAt.normal, Vector3.up) > 0.5f)
+                {
+                    m_grounded = true;
+                    m_stalled = false;
+                    StartCoroutine(FallRecover());
+                }
+            }
+            else if (!m_stalled)
             {
                 m_grounded = true;
 
@@ -146,7 +198,7 @@ public class PlayerController : MonoBehaviour
                 {
                     m_grounded = false;
                     m_stalled = true;
-                }
+                }                
             }
             else
             {
@@ -195,7 +247,7 @@ public class PlayerController : MonoBehaviour
 
     public void Move (Vector2 move)
     {
-        if (!m_jumping)
+        if (!m_jumping && !m_freeFly)
         {
             GroundCheck();
         }
@@ -237,6 +289,11 @@ public class PlayerController : MonoBehaviour
         {
             ShieldMove(move);
             return;
+        }
+
+        if (m_freeFly)
+        {
+            FlyMove(move);
         }
 
         if (m_grounded)
@@ -308,6 +365,16 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void FlyMove(Vector2 move)
+    {
+        if (m_playerRB.useGravity)
+        {
+            m_playerRB.useGravity = false;
+        }
+
+        //...
+    }
+
     public void AirDash (Vector2 move)
     {
         if (m_airDashes < 1.0f || move.magnitude < 0.1f)
@@ -336,7 +403,9 @@ public class PlayerController : MonoBehaviour
     private IEnumerator AirDashing (Vector3 move)
     {
         m_airDashing = true;
-                
+
+        m_footStepsSoundEffectSource.PlayOneShot(m_airDashSound);
+
         float startTime = Time.time, endTime = startTime + m_dashDuration;
 
         do
@@ -359,7 +428,7 @@ public class PlayerController : MonoBehaviour
             m_flying = Mathf.Lerp(m_flying, fly, m_flightTransitionRate * Time.deltaTime);
 
             yield return null;
-        } while (Time.time <= endTime && !m_airDashCancel);
+        } while (Time.time <= endTime && !m_airDashCancel && !m_freeFly);
 
         do
         {
@@ -373,11 +442,63 @@ public class PlayerController : MonoBehaviour
             m_flying = Mathf.Lerp(m_flying, 0.0f, m_flightTransitionRate * Time.deltaTime);            
 
             yield return null;
-        } while (m_flying > 0.05f && !m_airDashCancel);
+        } while (m_flying > 0.05f && !m_airDashCancel && !m_freeFly);
 
-        m_flying = 0.0f;
+        if (!m_freeFly)
+        {
+            m_flying = 0.0f;
+        }
+        
         m_airDashing = false;
         m_airDashCancel = false;
+        yield return null;
+    }
+
+    public void FreeFly ()
+    {
+        Debug.Log("hello!");
+
+        if (!m_freeFly)
+        {
+            m_freeFly = true;
+            StartCoroutine(FreeFlying());
+        }
+        else
+        {
+            m_freeFly = false;
+        }        
+    }
+
+    private IEnumerator FreeFlying ()
+    {
+        while (m_freeFly)
+        {
+            Debug.Log("flying!");
+            if (m_flying < 1.0f)
+            {
+                m_flying = Mathf.Lerp(m_flying, 1.0f, m_flightTransitionRate * Time.deltaTime);
+
+                if (m_flying > 0.99f)
+                {
+                    m_flying = 1.0f;
+                }
+            }
+            yield return null;
+        }
+
+        while (m_flying > 0.0f)
+        {
+            Debug.Log("END flying!");
+            m_flying = Mathf.Lerp(m_flying, 0.0f, m_flightTransitionRate * Time.deltaTime);
+
+            if (m_flying < 0.01f)
+            {
+                m_flying = 0.0f;
+            }
+            
+            yield return null;
+        }
+
         yield return null;
     }
 
@@ -408,7 +529,7 @@ public class PlayerController : MonoBehaviour
 
     public void Shield (bool state)
     {
-        if (m_shieldEnergy < 1.0f)
+        if (m_shieldEnergy <= 0.0f)
         {
             m_shielding = false;
             return;
@@ -475,9 +596,16 @@ public class PlayerController : MonoBehaviour
                 m_playerShield.transform.localScale = Vector3.Lerp(m_playerShield.transform.localScale, Vector3.one, 7.5f * Time.deltaTime);
             }
 
-            //m_shieldEnergy = Mathf.Lerp(m_shieldEnergy, 0.0f, 0.03f * Time.deltaTime);
+            //m_shieldEnergy = Mathf.Lerp(m_shieldEnergy, 0.0f, 0.5f * Time.deltaTime);
+            m_shieldEnergy -= 0.3f * Time.deltaTime;
+
+            //Debug.Log("m_shieldEnergy == " + m_shieldEnergy.ToString());
+
             yield return null;
-        } while (m_shielding && m_shieldEnergy > 0.0f);
+        } while (m_shielding && m_shieldEnergy > 0.01f);
+
+        m_shielding = false;
+        
 
         //DeVisualize shield
         m_playerShield.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
@@ -499,9 +627,20 @@ public class PlayerController : MonoBehaviour
         return m_grounded;
     }
 
+    public bool PlayerIsShielded ()
+    {
+        return m_shielding;
+    }
+
+    public float GetShieldEnergy ()
+    {
+        return m_shieldEnergy;
+    }
+
     public float GetSpeed ()
     {
-        return m_speed;
+        return m_playerRB.velocity.magnitude;
+        //return m_speed;
     }
 
     public float GetMaxSpeed()
