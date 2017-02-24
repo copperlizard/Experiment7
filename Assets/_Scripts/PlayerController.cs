@@ -294,6 +294,7 @@ public class PlayerController : MonoBehaviour
         if (m_freeFly)
         {
             FlyMove(move);
+            return;
         }
 
         if (m_grounded)
@@ -323,7 +324,8 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f)?1.0f:-1.0f), transform.up).normalized, transform.up);
+            //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f)?1.0f:-1.0f), transform.up).normalized, transform.up);
+            Quaternion rot = Quaternion.LookRotation(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up);
 
             transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
         }
@@ -358,8 +360,9 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
+            //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
             //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up).normalized, transform.up);
+            Quaternion rot = Quaternion.LookRotation(move3d, transform.up);
 
             transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * 0.5f * (1.0f - 0.775f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
         }
@@ -372,12 +375,24 @@ public class PlayerController : MonoBehaviour
             m_playerRB.useGravity = false;
         }
 
-        //...
+        //Vector3 move3d = new Vector3(move.y, 0.0f, move.x); //local
+
+        Vector3 heading = transform.TransformDirection(Quaternion.Euler(move.y, 0.0f, 0.0f) * Vector3.forward);
+        Vector3 headingUp = transform.TransformDirection(Quaternion.Euler(0.0f, 0.0f, -move.x * 2.0f) * Vector3.up);
+        
+        
+        //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up).normalized, transform.up);
+        Quaternion rot = Quaternion.LookRotation(heading, headingUp);
+
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+        
+
+        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed * 3.0f, 3.0f * Time.deltaTime);
     }
 
     public void AirDash (Vector2 move)
     {
-        if (m_airDashes < 1.0f || move.magnitude < 0.1f)
+        if (m_airDashes < 1.0f || move.magnitude < 0.1f || m_freeFly)
         {
             return;
         }
@@ -461,6 +476,10 @@ public class PlayerController : MonoBehaviour
         if (!m_freeFly)
         {
             m_freeFly = true;
+
+            ParticleSystem.MainModule main = m_dashParticles.main;
+            main.loop = true;
+            m_dashParticles.Play();
             StartCoroutine(FreeFlying());
         }
         else
