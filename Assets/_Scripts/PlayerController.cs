@@ -491,8 +491,7 @@ public class PlayerController : MonoBehaviour
     private IEnumerator FreeFlying ()
     {
         while (m_freeFly)
-        {
-            Debug.Log("flying!");
+        {   
             if (m_flying < 1.0f)
             {
                 m_flying = Mathf.Lerp(m_flying, 1.0f, m_flightTransitionRate * Time.deltaTime);
@@ -506,8 +505,7 @@ public class PlayerController : MonoBehaviour
         }
 
         while (m_flying > 0.0f)
-        {
-            Debug.Log("END flying!");
+        {   
             m_flying = Mathf.Lerp(m_flying, 0.0f, m_flightTransitionRate * Time.deltaTime);
 
             if (m_flying < 0.01f)
