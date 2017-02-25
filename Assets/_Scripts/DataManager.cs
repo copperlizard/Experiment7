@@ -40,9 +40,38 @@ public class DataManager : MonoBehaviour
     {
         LoadRecords(SceneManager.GetActiveScene().buildIndex);
 
+        Debug.Log("adding record " + recTime.ToString());
+
         m_recs.Add(recTime);
+
+        Debug.Log("after add record");
+        int i = 0;
+        foreach (float num in m_recs)
+        {
+            Debug.Log("m_recs[" + i.ToString() + "] == " + num.ToString());
+            i++;
+        }
+        i = 0;
+
         m_recs.Sort();
+
+        Debug.Log(System.Environment.NewLine + "after list sort");
+        foreach (float num in m_recs)
+        {
+            Debug.Log("m_recs[" + i.ToString() + "] == " + num.ToString());
+            i++;
+        }
+        i = 0;
+
         m_recs.RemoveAt(m_recs.Count - 1);
+
+        Debug.Log(System.Environment.NewLine + "after remove item");
+        foreach (float num in m_recs)
+        {
+            Debug.Log("m_recs[" + i.ToString() + "] == " + num.ToString());
+            i++;
+        }
+        i = 0;
 
         SaveRecords(SceneManager.GetActiveScene().buildIndex);
 
@@ -77,7 +106,7 @@ public class DataManager : MonoBehaviour
         if (File.Exists(Application.persistentDataPath + "/Level" + i.ToString() + "Records.dat"))
         {
             file = File.Open(Application.persistentDataPath + "/Level" + i.ToString() + "Records.dat", FileMode.Open);
-            m_recs = (List<float>)bf.Deserialize(file);
+            //m_recs = (List<float>)bf.Deserialize(file);
         }
         else
         {

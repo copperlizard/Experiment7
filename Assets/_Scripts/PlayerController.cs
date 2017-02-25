@@ -257,7 +257,7 @@ public class PlayerController : MonoBehaviour
         m_turn = move.x; // For animator        
 
         //Player relative movement
-        Vector3 move3d = new Vector3(move.x, 0.0f, move.y);
+        Vector3 move3d = new Vector3(move.x, 0.0f, move.y).normalized;
         move3d = transform.rotation * move3d;
 
         //Add camera relativity (a bit smoother, but causes issues with camera intersections steering the player...)       
@@ -266,23 +266,21 @@ public class PlayerController : MonoBehaviour
         //move3d = camRot * move3d;
 
         //Slow player in tight turns
-        float tiltFactor = Mathf.SmoothStep(0.0f, 1.0f, Mathf.InverseLerp(0.0f, 0.65f, Mathf.Abs(Vector3.Dot(move3d, transform.forward))));
-
-        //m_speed = Mathf.Lerp(m_playerRB.velocity.magnitude, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
-        //m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
-        //m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.magnitude * tiltFactor, 7.5f * Time.deltaTime);
+        float tiltFactor = Mathf.SmoothStep(1.0f, 0.0f, Mathf.Abs(m_turn));
 
         // Reverse        
-        if (Vector3.Dot(move3d.normalized, -transform.forward) > 0.45f)
-        {
-            //m_speed = -Mathf.Lerp(m_playerRB.velocity.magnitude, (m_maxSpeed * 0.5f) * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
+        if (Vector3.Dot(move3d.normalized, -transform.forward) > 0.0f)
+        {             
             m_speed = Mathf.Lerp(m_speed, -1.0f * (m_maxSpeed * 0.5f) * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
-            //m_speed = m_speed * 0.5f;
-            //m_speed = -m_speed;
         }
         else
         {
             m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
+        }
+
+        if (Mathf.Abs(m_speed) < 0.01f)
+        {
+            m_speed = 0.0f;
         }
         
         if (m_shielding)
@@ -324,10 +322,9 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f)?1.0f:-1.0f), transform.up).normalized, transform.up);
-            Quaternion rot = Quaternion.LookRotation(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up);
-
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+            Quaternion rot = Quaternion.LookRotation(move.normalized * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up);
+            
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
         }
     }
 
@@ -360,11 +357,9 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
-            //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up).normalized, transform.up);
             Quaternion rot = Quaternion.LookRotation(move3d, transform.up);
 
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * 0.5f * (1.0f - 0.775f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 0.5f * m_speedMod * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
         }
     }
 
@@ -374,18 +369,13 @@ public class PlayerController : MonoBehaviour
         {
             m_playerRB.useGravity = false;
         }
-
-        //Vector3 move3d = new Vector3(move.y, 0.0f, move.x); //local
-
+        
         Vector3 heading = transform.TransformDirection(Quaternion.Euler(move.y, 0.0f, 0.0f) * Vector3.forward);
         Vector3 headingUp = transform.TransformDirection(Quaternion.Euler(0.0f, 0.0f, -move.x * 2.0f) * Vector3.up);
-        
-        
-        //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up).normalized, transform.up);
+
         Quaternion rot = Quaternion.LookRotation(heading, headingUp);
 
         transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
-        
 
         m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed * 3.0f, 3.0f * Time.deltaTime);
     }
@@ -429,7 +419,6 @@ public class PlayerController : MonoBehaviour
             Quaternion rot = Quaternion.LookRotation(m_playerRB.velocity.normalized);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 2.0f);
 
-            //float fly = Mathf.Lerp(m_flying, 1.0f, m_flightTransitionRate * Time.deltaTime);
             float fly = 1.0f;
 
             if (Physics.Raycast(transform.position + transform.up * 0.5f, Vector3.Lerp(-transform.up, transform.forward, (m_speed / m_maxSpeed) * 0.5f), out m_groundAt))
@@ -471,8 +460,6 @@ public class PlayerController : MonoBehaviour
 
     public void FreeFly ()
     {
-        Debug.Log("hello!");
-
         if (!m_freeFly)
         {
             m_freeFly = true;

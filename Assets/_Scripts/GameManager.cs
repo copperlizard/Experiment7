@@ -131,6 +131,7 @@ public class GameManager : MonoBehaviour
         //Update records text
         string recText = "";
 
+        int i = 1;
         foreach (float rec in recs)
         {
             TimeSpan t = TimeSpan.FromSeconds(rec);
@@ -138,11 +139,12 @@ public class GameManager : MonoBehaviour
             {
                 recText += "<color=#FF7A7AFF>";
             }
-            recText += string.Format("{0:D2}:{1:D2}:{2:D3}", t.Minutes, t.Seconds, t.Milliseconds) + System.Environment.NewLine;
+            recText += "#" + i.ToString() + " - " + string.Format("{0:D2}:{1:D2}:{2:D3}", t.Minutes, t.Seconds, t.Milliseconds) + System.Environment.NewLine;
             if (rec == m_timeElapsed)
             {
                 recText += "</color>";
             }
+            i++;
         }
 
         m_recordsText.text = recText;
