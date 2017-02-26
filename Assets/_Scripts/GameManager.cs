@@ -52,13 +52,22 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    void Start()
+    {
+        if (!m_finished)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
         if (!m_finished)
         {
             m_timeElapsed = Time.timeSinceLevelLoad;
-        }        
+        } 
     }
     
     public void PauseGame ()
@@ -72,6 +81,8 @@ public class GameManager : MonoBehaviour
         Debug.Log("pause!");
 
         m_paused = true;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
         m_pauseMenuAnimator.SetBool("visible", true);
 
         Time.timeScale = 0.0f;
@@ -82,6 +93,8 @@ public class GameManager : MonoBehaviour
         Debug.Log("resume!");
 
         m_paused = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
         m_pauseMenuAnimator.SetBool("visible", false);
 
         Time.timeScale = 1.0f;
@@ -100,6 +113,8 @@ public class GameManager : MonoBehaviour
 
     public void LoadScene (int ind)
     {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
         SceneManager.LoadScene(ind);
     }
 
@@ -125,6 +140,9 @@ public class GameManager : MonoBehaviour
     public void LevelFinished ()
     {
         m_finished = true;
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
 
         List<float> recs = m_dataManager.UpdateRecords(m_timeElapsed);
 

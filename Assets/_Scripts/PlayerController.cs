@@ -21,6 +21,8 @@ public class PlayerController : MonoBehaviour
     private Camera m_camera;
     private CameraController m_cameraController;
 
+    private GameManager m_gameManager;
+
     private AudioSource m_footStepsSoundEffectSource;
 
     private Rigidbody m_playerRB;
@@ -78,7 +80,17 @@ public class PlayerController : MonoBehaviour
             Debug.Log("m_cameraController not found!");
         }
 
-        m_dashParticles = GetComponentInChildren<ParticleSystem>();        
+        m_gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
+        if (m_gameManager == null)
+        {
+            Debug.Log("m_gameManager not found!");
+        }
+
+        m_dashParticles = GetComponentInChildren<ParticleSystem>();
+        if (m_dashParticles == null)
+        {
+            Debug.Log("m_dashParticles not found!");
+        }
     }
 	
 	// Update is called once per frame
@@ -114,7 +126,7 @@ public class PlayerController : MonoBehaviour
         }
 
         //Foot sounds
-        if ((runCycle <= 0.1f || (runCycle >= 0.45f && runCycle <= 0.55f)) && !m_footStepsSoundEffectSource.isPlaying && m_grounded)
+        if ((runCycle <= 0.1f || (runCycle >= 0.45f && runCycle <= 0.55f)) && !m_footStepsSoundEffectSource.isPlaying && m_grounded && !m_gameManager.IsPaused())
         {
             m_footStepsSoundEffectSource.pitch = Random.Range(0.9f, 1.1f);
             //m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, Mathf.Lerp(0.0f, 1.0f, m_playerRB.velocity.magnitude));

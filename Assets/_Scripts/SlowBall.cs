@@ -10,6 +10,9 @@ public class SlowBall : Destructible
     [SerializeField]
     private AudioClip m_destructionSound;
 
+    [SerializeField]
+    private Light m_light;
+
     private SlowBallTriggerZone m_triggerZone;
 
     private GameObject m_player, m_sphere, m_destruction;
@@ -46,6 +49,11 @@ public class SlowBall : Destructible
         if (m_destructionSound == null)
         {
             Debug.Log("m_destructionSound not assigned!");
+        }
+
+        if (m_light == null)
+        {
+            Debug.Log("m_light not assigned!");
         }
 
         m_sphere = transform.GetChild(0).gameObject;
@@ -107,6 +115,7 @@ public class SlowBall : Destructible
                     m_ballRB.velocity = m_triggerZone.transform.TransformVector(m_startLocalPos.normalized * m_followSpeed);
                     transform.parent = null;
                     m_ballAudioSource.Play();
+                    m_light.enabled = true;
                 }
                 else
                 {
@@ -117,12 +126,16 @@ public class SlowBall : Destructible
             {
                 ChasePlayer();
             }
-        }             
+        }         
 	}
 
     private void ChasePlayer ()
     {
-        Vector3 toPlayer = (m_player.transform.position + m_player.transform.up * 1.6f) - transform.position;
+        float now = Time.time + GetInstanceID() * 50.0f;
+        float h = Mathf.Sin(now) * 0.5f + 0.5f;
+        m_light.color = Color.red * h + Color.blue * (1.0f - h);
+        
+        Vector3 toPlayer = (m_player.transform.position + m_player.transform.up * (1.6f - h)) - transform.position;
 
         if (toPlayer.magnitude > m_maxFollowDist)
         {
@@ -148,6 +161,7 @@ public class SlowBall : Destructible
             {
                 m_ballAudioSource.Stop();
                 m_stuck = true;
+                m_light.enabled = false;
 
                 if (!m_playerController.PlayerIsShielded())
                 {
