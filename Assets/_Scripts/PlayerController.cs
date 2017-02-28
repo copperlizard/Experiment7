@@ -188,8 +188,7 @@ public class PlayerController : MonoBehaviour
     private void GroundCheck ()
     {
         if (Physics.Raycast(transform.position + transform.up * 0.5f, -transform.up, out m_groundAt, m_groundCheckDist + 0.5f, LayerMask.NameToLayer("PlayerBody"), QueryTriggerInteraction.Ignore))
-        {
-            
+        {            
             if (!m_grounded && m_playerRB.velocity.y <= -m_maxSpeed * 0.5f) // Already falling fast
             {
                 //Debug.Log("fast fall!");
@@ -266,7 +265,8 @@ public class PlayerController : MonoBehaviour
 
         move = move.normalized * Mathf.Min(1.0f, move.magnitude); // Make keyboard input look like joystick input (joystick unaffected)
 
-        m_turn = move.x; // For animator        
+        //m_turn = move.x;
+        m_turn = Mathf.SmoothStep(0.0f, 1.0f, Mathf.Abs(move.x)) * ((move.x >= 0.0f)?1.0f:-1.0f); // For animator        
 
         //Player relative movement
         Vector3 move3d = new Vector3(move.x, 0.0f, move.y).normalized;
@@ -278,23 +278,11 @@ public class PlayerController : MonoBehaviour
         //move3d = camRot * move3d;
 
         //Slow player in tight turns
-        float tiltFactor = Mathf.SmoothStep(1.0f, 0.0f, Mathf.Abs(m_turn));
+        //float tiltFactor = Mathf.SmoothStep(1.0f, 0.0f, Mathf.Abs(m_turn));
+                
+        m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.y * m_speedMod, 3.5f * Time.deltaTime);
 
-        // Reverse        
-        if (Vector3.Dot(move3d.normalized, -transform.forward) > 0.0f)
-        {             
-            m_speed = Mathf.Lerp(m_speed, -1.0f * (m_maxSpeed * 0.5f) * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
-        }
-        else
-        {
-            m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.magnitude * tiltFactor * m_speedMod, 3.5f * Time.deltaTime);
-        }
 
-        if (Mathf.Abs(m_speed) < 0.01f)
-        {
-            m_speed = 0.0f;
-        }
-        
         if (m_shielding)
         {
             ShieldMove(move);
@@ -325,7 +313,7 @@ public class PlayerController : MonoBehaviour
         }
 
         Vector3 vel = m_groundParallel.normalized * m_speed;
-        
+
         m_playerRB.velocity = vel;
         
         if (move.magnitude < 0.05)
@@ -334,9 +322,13 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            Quaternion rot = Quaternion.LookRotation(move.normalized * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up);
-            
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
+            //Quaternion rot = Quaternion.LookRotation(move.normalized * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up);
+            //Quaternion rot = Quaternion.LookRotation(move.normalized, transform.up);
+
+            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
+            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod);
+
+            transform.RotateAround(transform.position, transform.up, m_turn * m_turnSpeed * Time.deltaTime * ((m_speed >= 0.0f) ? 1.0f : -1.0f));
         }
     }
 
@@ -369,9 +361,10 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            Quaternion rot = Quaternion.LookRotation(move3d, transform.up);
+            //Quaternion rot = Quaternion.LookRotation(move3d, transform.up);
 
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 0.5f * m_speedMod * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
+            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 0.5f * m_speedMod * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
+            transform.RotateAround(transform.position, transform.up, m_turn * m_turnSpeed * 0.5f * Time.deltaTime);
         }
     }
 
@@ -588,10 +581,11 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
+            //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
             //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up).normalized, transform.up);
 
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 0.5f * m_speedMod * (1.0f - 0.775f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 0.5f * m_speedMod * (1.0f - 0.775f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+            transform.RotateAround(transform.position, transform.up, m_turn * m_turnSpeed * 0.5f * Time.deltaTime);
         }
     }
 

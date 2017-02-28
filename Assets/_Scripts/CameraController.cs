@@ -56,6 +56,12 @@ public class CameraController : MonoBehaviour
     private void ChasePlayer ()
     {
         Vector3 tarPos = m_player.transform.position + m_player.transform.rotation * (Quaternion.Euler(m_tilt, m_pan, 0.0f) * m_boomVector);
+        //Vector3 tarPos = m_player.transform.position + m_player.transform.rotation * m_boomVector;
+
+        //tarPos = Quaternion.AngleAxis(m_tilt, m_player.transform.right) * (tarPos - m_player.transform.position) + m_player.transform.position;
+        //tarPos = Quaternion.AngleAxis(m_pan, m_player.transform.up) * (tarPos - m_player.transform.position) + m_player.transform.position;
+
+
         Vector3 lookTar = m_player.transform.position + m_player.transform.rotation * m_lookOffset;
         Vector3 checkSightLine = tarPos - lookTar;
 
@@ -67,16 +73,14 @@ public class CameraController : MonoBehaviour
 
         // Obstructed
         RaycastHit hit;
-        //if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, LayerMask.GetMask("Player", "Projectile")))
         if (Physics.SphereCast(lookTar, m_cameraClearanceRadius, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.GetMask("Player", "Projectile", "PlayerBody"), QueryTriggerInteraction.Ignore))
         {
             //Debug.Log("camera view obstructed by " + hit.collider.gameObject.name + "!");
             
-            tarPos = hit.point + hit.normal * m_cameraClearanceRadius;
-            //tarPos = hit.point;
+            tarPos = hit.point + hit.normal * m_cameraClearanceRadius;            
         }        
 
-        transform.position = Vector3.Lerp(transform.position, tarPos, 5.0f * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, tarPos, 5.0f * Time.deltaTime); 
         transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up), 20.0f * Time.deltaTime);
 
         m_motionBlur.blurAmount = m_playerRB.velocity.magnitude / 90.0f;

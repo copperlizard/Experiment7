@@ -37,7 +37,7 @@ public class SlowBall : Destructible
 
     private IEnumerator WaitForSmoke ()
     {
-        m_ballAudioSource.PlayOneShot(m_destructionSound, 0.5f);
+        m_ballAudioSource.PlayOneShot(m_destructionSound, 0.1f);
         yield return new WaitForSeconds(0.25f);
         m_destruction.SetActive(false);        
         Destroy(gameObject);
