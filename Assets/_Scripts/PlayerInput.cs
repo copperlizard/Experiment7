@@ -82,7 +82,12 @@ public class PlayerInput : MonoBehaviour
         m_move.x = Input.GetAxis("Horizontal");
         m_move.y = Input.GetAxis("Vertical");
 
-        if (Input.GetButtonDown("Jump") && !m_jumpCharging && m_playerController.PlayerIsGrounded() && !m_pauseJumpLock && !Input.GetButton("Shield"))
+        float sideStep = Input.GetAxis("SideStep");
+        if (sideStep > 0.1f || sideStep < -0.1f)
+        {
+            m_playerController.SideStep(sideStep);
+        }
+        else if (Input.GetButtonDown("Jump") && !m_jumpCharging && m_playerController.PlayerIsGrounded() && !m_pauseJumpLock && !Input.GetButton("Shield"))
         {
             StartCoroutine(JumpCharge());
             m_jump = true;

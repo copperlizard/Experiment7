@@ -120,6 +120,7 @@
     <Compile Include="Assets\Resources\Standard Assets\Effects\ImageEffects\Scripts\VignetteAndChromaticAberration.cs" />
     <Compile Include="Assets\Resources\Standard Assets\Effects\ImageEffects\Scripts\Vortex.cs" />
     <Compile Include="Assets\_Scripts\BasicRotator.cs" />
+    <Compile Include="Assets\_Scripts\BoomBox.cs" />
     <Compile Include="Assets\_Scripts\CameraController.cs" />
     <Compile Include="Assets\_Scripts\CameraInput.cs" />
     <Compile Include="Assets\_Scripts\CameraRenderDepth.cs" />

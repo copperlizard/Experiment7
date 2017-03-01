@@ -7,8 +7,8 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField]
     private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_airDashSpeed = 30.0f, 
-        m_dashDuration = 1.0f, m_groundCheckDist = 0.25f, m_minFlightHeight = 1.0f, m_flightTransitionRate = 20.0f,
-        m_runCycleLegOffset = 0.0f;
+        m_dashDuration = 1.0f, m_sideStepDuration = 0.5f, m_groundCheckDist = 0.25f, m_minFlightHeight = 1.0f, 
+        m_flightTransitionRate = 20.0f, m_runCycleLegOffset = 0.0f;
 
     [SerializeField]
     private GameObject m_playerShield;
@@ -33,9 +33,10 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 m_groundParallel;
 
-    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f;
+    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_sideStep = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f;
 
-    private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false, m_stalled = false, m_shielding = false, m_freeFly = false;
+    private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false, 
+        m_stalled = false, m_shielding = false, m_freeFly = false, m_sideStepping = false, m_groundCheckSuspended = false;
 
 	// Use this for initialization
 	void Start ()
@@ -134,8 +135,13 @@ public class PlayerController : MonoBehaviour
             //m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, 1.0f);
         }
 
+        //Player Actions
         m_playerAnimator.SetBool("Shielding", m_shielding);
-        if (m_shielding)
+
+        m_playerAnimator.SetBool("SideStepping", m_sideStepping);
+        m_playerAnimator.SetFloat("SideStep", m_sideStep);
+
+        if (m_shielding || m_sideStepping)
         {
             m_playerAnimator.SetLayerWeight(1, Mathf.Lerp(m_playerAnimator.GetLayerWeight(1), 1.0f, 10.0f * Time.deltaTime));
         }
@@ -230,7 +236,7 @@ public class PlayerController : MonoBehaviour
         return;
     }
 
-    private void AlignWithGround()
+    private void AlignWithGround ()
     {
         if (m_airDashing)
         {
@@ -258,7 +264,7 @@ public class PlayerController : MonoBehaviour
 
     public void Move (Vector2 move)
     {
-        if (!m_jumping && !m_freeFly)
+        if (!m_jumping && !m_freeFly && !m_sideStepping && !m_groundCheckSuspended)
         {
             GroundCheck();
         }
@@ -282,6 +288,10 @@ public class PlayerController : MonoBehaviour
                 
         m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.y * m_speedMod, 3.5f * Time.deltaTime);
 
+        if (m_speed < 0.1f && m_speed > -0.1f)
+        {
+            m_speed = 0.0f;
+        }
 
         if (m_shielding)
         {
@@ -328,7 +338,7 @@ public class PlayerController : MonoBehaviour
             //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
             //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod);
 
-            transform.RotateAround(transform.position, transform.up, m_turn * m_turnSpeed * Time.deltaTime * ((m_speed >= 0.0f) ? 1.0f : -1.0f));
+            transform.RotateAround(transform.position, transform.up, m_turn * m_turnSpeed * Time.deltaTime * ((m_speed >= -0.01f) ? 1.0f : -1.0f));
         }
     }
 
@@ -368,7 +378,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void FlyMove(Vector2 move)
+    private void FlyMove (Vector2 move)
     {
         if (m_playerRB.useGravity)
         {
@@ -385,6 +395,48 @@ public class PlayerController : MonoBehaviour
         m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed * 3.0f, 3.0f * Time.deltaTime);
     }
 
+    public void SideStep(float dir)
+    {
+        if (m_sideStepping || m_freeFly || m_airDashes < 0.5f)
+        {
+            return;
+        }
+
+        if (m_airDashing)
+        {
+            m_airDashCancel = true;
+            return;
+        }
+
+        m_sideStep = dir; //for animator
+        m_airDashes -= 0.5f;
+
+        m_dashParticles.Play();
+
+        m_sideStepping = true;
+        m_grounded = false;
+
+        StartCoroutine(SideStepping(dir));
+    }
+
+    private IEnumerator SideStepping (float dir)
+    {
+        float startTime = Time.time, endTime = startTime + m_sideStepDuration;
+
+        m_footStepsSoundEffectSource.PlayOneShot(m_airDashSound);
+
+        do
+        {
+            m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.right * m_airDashSpeed * dir, 10.0f * Time.deltaTime);
+                        
+            yield return null;
+        } while (Time.time <= endTime && !m_airDashCancel && !m_freeFly);
+
+        yield return new WaitForSeconds(m_dashDuration);
+        m_sideStepping = false;
+        yield return null;
+    }
+
     public void AirDash (Vector2 move)
     {
         if (m_airDashes < 1.0f || move.magnitude < 0.1f || m_freeFly)
@@ -392,7 +444,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (m_airDashing )
+        if (m_airDashing)
         {
             m_airDashCancel = true;
             return;
@@ -589,7 +641,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private IEnumerator Shielding()
+    private IEnumerator Shielding ()
     {
         if (m_playerRB.useGravity)
         {
@@ -624,12 +676,27 @@ public class PlayerController : MonoBehaviour
         yield return null;
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnCollisionEnter (Collision collision)
     {
-        if (collision.gameObject.layer == LayerMask.NameToLayer("Default")) // push of level
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Default")) // push off level
         {
             transform.position = Vector3.Lerp(transform.position, transform.position + collision.contacts[0].normal * 0.1f, 0.1f);
         }
+    }
+
+    public void AddExplosionForce(float force, Vector3 pos, float radius, float upMod)
+    {
+        StartCoroutine(SuspendGroundCheck(0.5f));
+        m_playerRB.AddExplosionForce(force, pos, radius, upMod);
+    }
+
+    private IEnumerator SuspendGroundCheck (float duration)
+    {
+        m_grounded = false;
+        m_groundCheckSuspended = true;
+        yield return new WaitForSeconds(duration);
+        m_groundCheckSuspended = false;
+        yield return null;
     }
 
     public bool PlayerIsGrounded ()
@@ -653,7 +720,7 @@ public class PlayerController : MonoBehaviour
         //return m_speed;
     }
 
-    public float GetMaxSpeed()
+    public float GetMaxSpeed ()
     {
         return m_maxSpeed;
     }

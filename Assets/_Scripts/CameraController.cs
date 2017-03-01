@@ -78,10 +78,11 @@ public class CameraController : MonoBehaviour
             //Debug.Log("camera view obstructed by " + hit.collider.gameObject.name + "!");
             
             tarPos = hit.point + hit.normal * m_cameraClearanceRadius;            
-        }        
+        }
 
-        transform.position = Vector3.Lerp(transform.position, tarPos, 5.0f * Time.deltaTime); 
-        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up), 20.0f * Time.deltaTime);
+        float lerpMod = new Vector2(m_pan / m_panMax, m_tilt / m_tiltMax).magnitude;
+        transform.position = Vector3.Lerp(transform.position, tarPos, (5.0f + 5.0f * lerpMod) * Time.deltaTime); 
+        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up), (20.0f + 20.0f * lerpMod) * Time.deltaTime);
 
         m_motionBlur.blurAmount = m_playerRB.velocity.magnitude / 90.0f;
     }
