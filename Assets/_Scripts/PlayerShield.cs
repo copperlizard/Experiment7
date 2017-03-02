@@ -21,7 +21,7 @@ public class PlayerShield : MonoBehaviour
     {
 		if (transform.localScale.x < 0.95f)
         {
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, transform.localScale.x, LayerMask.GetMask("Projectile"));
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, transform.localScale.x + 0.1f, LayerMask.GetMask("Projectile"));
 
             for (int i = 0; i < hitColliders.Length; i++)
             {

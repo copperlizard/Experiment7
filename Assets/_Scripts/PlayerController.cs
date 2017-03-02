@@ -307,7 +307,7 @@ public class PlayerController : MonoBehaviour
 
         if (m_grounded)
         {
-            GroundMove(move3d);
+            GroundMove(move);
         }
         else
         {
@@ -315,7 +315,7 @@ public class PlayerController : MonoBehaviour
         }        
     }
 
-    private void GroundMove (Vector3 move)
+    private void GroundMove (Vector2 move)
     {
         if (m_playerRB.useGravity)
         {
@@ -338,7 +338,7 @@ public class PlayerController : MonoBehaviour
             //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
             //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod);
 
-            transform.RotateAround(transform.position, transform.up, m_turn * m_turnSpeed * Time.deltaTime * ((m_speed >= -0.01f) ? 1.0f : -1.0f));
+            transform.RotateAround(transform.position, transform.up, m_turn * m_turnSpeed * Time.deltaTime * ((move.y >= -0.1) ? 1.0f : -1.0f));
         }
     }
 
@@ -684,8 +684,13 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void AddExplosionForce(float force, Vector3 pos, float radius, float upMod)
+    public void AddExplosionForce(float force, Vector3 pos, float radius, float upMod = 0.0f)
     {
+        if (m_shielding)
+        {
+            return;
+        }
+
         StartCoroutine(SuspendGroundCheck(0.5f));
         m_playerRB.AddExplosionForce(force, pos, radius, upMod);
     }

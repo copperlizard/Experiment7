@@ -78,7 +78,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        Debug.Log("pause!");
+        //Debug.Log("pause!");
 
         m_paused = true;
         Cursor.lockState = CursorLockMode.None;
@@ -90,7 +90,7 @@ public class GameManager : MonoBehaviour
 
     public void ResumeGame ()
     {
-        Debug.Log("resume!");
+        //Debug.Log("resume!");
 
         m_paused = false;
         Cursor.lockState = CursorLockMode.Locked;
