@@ -151,7 +151,7 @@ public class BoomBox : MonoBehaviour
 
             if (hitColliders[i].tag == "Player")
             {
-                m_playerController.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius);
+                m_playerController.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius, 0.5f);
 
                 //Debug.Log("exploding Player!");
             }
@@ -166,12 +166,12 @@ public class BoomBox : MonoBehaviour
                         //object has parent                        
                         if (hitColliders[i].transform.parent.gameObject.layer != LayerMask.NameToLayer("PlayerBody"))
                         {
-                            hitRB.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius);
+                            hitRB.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius, 0.5f);
                         }
                     }
                     else
                     {
-                        hitRB.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius);
+                        hitRB.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius, 0.5f);
                     }
                 }
             }            

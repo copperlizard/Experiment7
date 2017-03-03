@@ -87,6 +87,10 @@ public class PlayerInput : MonoBehaviour
         {
             m_playerController.SideStep(sideStep);
         }
+        else if (Input.GetButtonDown("Kick"))
+        {
+            m_playerController.Kick();
+        }
         else if (Input.GetButtonDown("Jump") && !m_jumpCharging && m_playerController.PlayerIsGrounded() && !m_pauseJumpLock && !Input.GetButton("Shield"))
         {
             StartCoroutine(JumpCharge());

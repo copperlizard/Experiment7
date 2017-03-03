@@ -36,7 +36,8 @@ public class PlayerController : MonoBehaviour
     private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_sideStep = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f;
 
     private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false, 
-        m_stalled = false, m_shielding = false, m_freeFly = false, m_sideStepping = false, m_groundCheckSuspended = false;
+        m_stalled = false, m_shielding = false, m_freeFly = false, m_sideStepping = false, 
+        m_kicking = false, m_groundCheckSuspended = false;
 
 	// Use this for initialization
 	void Start ()
@@ -137,11 +138,11 @@ public class PlayerController : MonoBehaviour
 
         //Player Actions
         m_playerAnimator.SetBool("Shielding", m_shielding);
-
+        m_playerAnimator.SetBool("Kicking", m_kicking);
         m_playerAnimator.SetBool("SideStepping", m_sideStepping);
         m_playerAnimator.SetFloat("SideStep", m_sideStep);
 
-        if (m_shielding || m_sideStepping)
+        if (m_shielding || m_sideStepping || m_kicking)
         {
             m_playerAnimator.SetLayerWeight(1, Mathf.Lerp(m_playerAnimator.GetLayerWeight(1), 1.0f, 10.0f * Time.deltaTime));
         }
@@ -264,7 +265,7 @@ public class PlayerController : MonoBehaviour
 
     public void Move (Vector2 move)
     {
-        if (!m_jumping && !m_freeFly && !m_sideStepping && !m_groundCheckSuspended)
+        if (!m_jumping && !m_freeFly && !m_sideStepping && !m_kicking && !m_groundCheckSuspended)
         {
             GroundCheck();
         }
@@ -296,6 +297,12 @@ public class PlayerController : MonoBehaviour
         if (m_shielding)
         {
             ShieldMove(move);
+            return;
+        }
+
+        if (m_kicking)
+        {
+            KickMove(move);
             return;
         }
 
@@ -393,6 +400,23 @@ public class PlayerController : MonoBehaviour
         transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
 
         m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed * 3.0f, 3.0f * Time.deltaTime);
+    }
+
+    private void KickMove (Vector2 move)
+    {
+        if (m_playerRB.useGravity)
+        {
+            m_playerRB.useGravity = false;
+        }
+
+        Vector3 heading = transform.TransformDirection(Quaternion.Euler(move.y, move.x * 2.0f, 0.0f) * Vector3.forward);
+        Vector3 headingUp = transform.TransformDirection(Quaternion.Euler(move.y, move.x * 2.0f, 0.0f) * Vector3.up); 
+
+        Quaternion rot = Quaternion.LookRotation(heading, headingUp);
+
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+
+        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed, 3.0f * Time.deltaTime);
     }
 
     public void SideStep(float dir)
@@ -515,6 +539,23 @@ public class PlayerController : MonoBehaviour
         yield return null;
     }
 
+    public void Kick ()
+    {
+        if (!m_kicking)
+        {
+            StartCoroutine(Kicking());
+        }
+    }
+
+    private IEnumerator Kicking ()
+    {        
+        m_kicking = true;
+        yield return new WaitForSeconds(1.0f);
+        m_kicking = false;
+
+        yield return null;
+    }
+
     public void FreeFly ()
     {
         if (!m_freeFly)
@@ -590,7 +631,7 @@ public class PlayerController : MonoBehaviour
 
     public void Shield (bool state)
     {
-        if (m_shieldEnergy <= 0.0f)
+        if (m_shieldEnergy <= 0.0f || m_kicking)
         {
             m_shielding = false;
             return;
@@ -664,7 +705,7 @@ public class PlayerController : MonoBehaviour
             //Debug.Log("m_shieldEnergy == " + m_shieldEnergy.ToString());
 
             yield return null;
-        } while (m_shielding && m_shieldEnergy > 0.01f);
+        } while (m_shielding && m_shieldEnergy > 0.01f && !m_kicking);
 
         m_shielding = false;
         
@@ -691,8 +732,13 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
+        float upForce = force * upMod;
+
+        force -= upForce;
+
         StartCoroutine(SuspendGroundCheck(0.5f));
-        m_playerRB.AddExplosionForce(force, pos, radius, upMod);
+        m_playerRB.AddExplosionForce(force, pos, radius);
+        m_playerRB.AddForce(transform.up * upForce);
     }
 
     private IEnumerator SuspendGroundCheck (float duration)
