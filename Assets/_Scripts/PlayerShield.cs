@@ -4,6 +4,12 @@ using UnityEngine;
 
 public class PlayerShield : MonoBehaviour
 {
+    [SerializeField]
+    private bool m_dashRegen = false;
+
+    [SerializeField]
+    private float m_dashRegenFactor = 1.5f;
+
     private PlayerController m_playerController;
 
 	// Use this for initialization
@@ -29,6 +35,11 @@ public class PlayerShield : MonoBehaviour
 
                 if (destroyable != null)
                 {
+                    if (m_dashRegen)
+                    {
+                        m_playerController.SetAirDashes(m_playerController.GetAirDashes() + m_dashRegenFactor);
+                    }
+
                     if (hitColliders[i].gameObject.tag == "SlowBall")
                     {
                         m_playerController.AdjustSpeedMod(0.05f);

@@ -119,7 +119,7 @@ public class SlowBall : Destructible
                 }
                 else
                 {
-                    transform.localPosition = m_startLocalPos; //ensure no drift while trigger zone spins
+                    //transform.localPosition = m_startLocalPos; //ensure no drift while trigger zone spins
                 }
             }
             else

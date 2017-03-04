@@ -7,11 +7,11 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField]
     private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_airDashSpeed = 30.0f, 
-        m_dashDuration = 1.0f, m_sideStepDuration = 0.5f, m_groundCheckDist = 0.25f, m_minFlightHeight = 1.0f, 
-        m_flightTransitionRate = 20.0f, m_runCycleLegOffset = 0.0f;
+        m_dashDuration = 1.0f, m_kickDuration = 3.0f, m_sideStepDuration = 0.5f, m_groundCheckDist = 0.25f, 
+        m_minFlightHeight = 1.0f, m_flightTransitionRate = 20.0f, m_runCycleLegOffset = 0.0f;
 
     [SerializeField]
-    private GameObject m_playerShield;
+    private GameObject m_playerShield, m_playerKickShield;
 
     [SerializeField]
     private AudioClip m_airDashSound;
@@ -45,6 +45,11 @@ public class PlayerController : MonoBehaviour
         if (m_playerShield == null)
         {
             Debug.Log("m_playerShield not assigned!");
+        }
+
+        if (m_playerKickShield == null)
+        {
+            Debug.Log("m_playerKickShield not assigned!");
         }
 
         if (m_airDashSound == null)
@@ -416,7 +421,7 @@ public class PlayerController : MonoBehaviour
 
         transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
 
-        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed, 3.0f * Time.deltaTime);
+        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed * 1.5f, 3.0f * Time.deltaTime);
     }
 
     public void SideStep(float dir)
@@ -541,8 +546,20 @@ public class PlayerController : MonoBehaviour
 
     public void Kick ()
     {
+        if (m_airDashes < 1.5f || m_freeFly)
+        {
+            return;
+        }
+
         if (!m_kicking)
         {
+            m_airDashes -= 1.5f;
+
+            m_grounded = false;
+
+            m_dashParticles.Play();
+            m_footStepsSoundEffectSource.PlayOneShot(m_airDashSound);
+
             StartCoroutine(Kicking());
         }
     }
@@ -550,7 +567,26 @@ public class PlayerController : MonoBehaviour
     private IEnumerator Kicking ()
     {        
         m_kicking = true;
-        yield return new WaitForSeconds(1.0f);
+
+        //Visualize shield
+        m_playerKickShield.SetActive(true);
+
+        float startTime = Time.time, endTime = startTime + m_kickDuration;
+
+        do
+        {
+            if (m_playerKickShield.transform.localScale.x < 1.0f)
+            {
+                m_playerKickShield.transform.localScale = Vector3.Lerp(m_playerKickShield.transform.localScale, Vector3.one, 7.5f * Time.deltaTime);
+            }
+
+            yield return null;
+        } while(Time.time <= endTime && !m_freeFly);
+
+        //DeVisualize shield
+        m_playerKickShield.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+        m_playerKickShield.SetActive(false);
+
         m_kicking = false;
 
         yield return null;
@@ -781,6 +817,11 @@ public class PlayerController : MonoBehaviour
         return m_airDashes;
     }
     
+    public void SetAirDashes (float dashes)
+    {
+        m_airDashes = Mathf.Min(dashes, 3.0f);
+    }
+
     public void AdjustSpeedMod (float delta)
     {
         m_speedMod += delta;
