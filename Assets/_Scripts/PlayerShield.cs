@@ -39,11 +39,6 @@ public class PlayerShield : MonoBehaviour
                     {
                         m_playerController.SetAirDashes(m_playerController.GetAirDashes() + m_dashRegenFactor);
                     }
-
-                    if (hitColliders[i].gameObject.tag == "SlowBall")
-                    {
-                        m_playerController.AdjustSpeedMod(0.05f);
-                    }
                     
                     destroyable.Destruct();
                 }

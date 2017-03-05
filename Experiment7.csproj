@@ -139,6 +139,7 @@
     <Compile Include="Assets\_Scripts\QuitButton.cs" />
     <Compile Include="Assets\_Scripts\SlowBall.cs" />
     <Compile Include="Assets\_Scripts\SlowBallTriggerZone.cs" />
+    <Compile Include="Assets\_Scripts\SpeedUpPickUp.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Resources\Standard Assets\Effects\GlassRefraction\Shaders\GlassStainedBumpDistort.shader" />

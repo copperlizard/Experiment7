@@ -108,9 +108,10 @@ public class PlayerController : MonoBehaviour
         if (!m_shielding)
         {
             m_shieldEnergy = Mathf.Min(1.0f, m_shieldEnergy + 0.15f * Time.deltaTime);
-        }        
+        }
 
-        m_playerAnimator.SetFloat("Speed", m_speed / m_maxSpeed);
+        //m_playerAnimator.SetFloat("Speed", m_speed / m_maxSpeed);
+        m_playerAnimator.SetFloat("Speed", m_playerRB.velocity.magnitude / m_maxSpeed);
         m_playerAnimator.SetFloat("Turn", m_turn);
         //m_playerAnimator.SetFloat("Falling", m_playerRB.velocity.y);
         m_playerAnimator.SetFloat("Falling", Mathf.Lerp(0.0f, transform.InverseTransformVector(m_playerRB.velocity).y, 1.0f - m_flying));
@@ -421,7 +422,7 @@ public class PlayerController : MonoBehaviour
 
         transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
 
-        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed * 1.5f, 3.0f * Time.deltaTime);
+        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed * 1.5f * m_speedMod, 3.0f * Time.deltaTime);
     }
 
     public void SideStep(float dir)
@@ -456,7 +457,7 @@ public class PlayerController : MonoBehaviour
 
         do
         {
-            m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.right * m_airDashSpeed * dir, 10.0f * Time.deltaTime);
+            m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.right * m_airDashSpeed * dir * m_speedMod, 10.0f * Time.deltaTime);
                         
             yield return null;
         } while (Time.time <= endTime && !m_airDashCancel && !m_freeFly);
@@ -501,7 +502,7 @@ public class PlayerController : MonoBehaviour
 
         do
         {
-            m_playerRB.velocity = move.normalized * Mathf.Lerp(m_playerRB.velocity.magnitude, m_airDashSpeed, 10.0f * Time.deltaTime);            
+            m_playerRB.velocity = move.normalized * Mathf.Lerp(m_playerRB.velocity.magnitude, m_airDashSpeed * m_speedMod, 10.0f * Time.deltaTime);            
             Quaternion rot = Quaternion.LookRotation(m_playerRB.velocity.normalized);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 2.0f);
 
@@ -824,7 +825,9 @@ public class PlayerController : MonoBehaviour
 
     public void AdjustSpeedMod (float delta)
     {
+        //Debug.Log("adjust speed mod delta == " + delta.ToString());
+
         m_speedMod += delta;
-        m_speedMod = Mathf.Clamp(m_speedMod, 0.0f, 1.0f);
+        m_speedMod = Mathf.Clamp(m_speedMod, 0.0f, 2.0f);
     } 
 }

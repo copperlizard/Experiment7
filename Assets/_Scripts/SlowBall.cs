@@ -24,10 +24,22 @@ public class SlowBall : Destructible
 
     private Vector3 m_startLocalPos;
 
-    private bool m_playerDetected = false, m_stuck = false;
+    private bool m_playerDetected = false, m_stuck = false, m_destructed = false;
 
     public override void Destruct()
     {
+        if (m_destructed)
+        {
+            return;
+        }
+
+        m_destructed = true;
+
+        if (m_stuck)
+        {
+            m_playerController.AdjustSpeedMod(0.05f);
+        }        
+
         m_sphere.SetActive(false);
 
         m_destruction.SetActive(true);
@@ -142,6 +154,7 @@ public class SlowBall : Destructible
             m_ballRB.velocity = Vector3.zero;
             m_playerDetected = false;
             m_ballAudioSource.Stop();
+            m_light.enabled = false;
         }
         else
         {
