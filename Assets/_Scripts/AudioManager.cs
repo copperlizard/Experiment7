@@ -2,11 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.UI;
 
 public class AudioManager : MonoBehaviour
 {
     [SerializeField]
     private AudioMixer m_mainMixer;
+
+    [SerializeField]
+    private Slider m_masterVolumeSlider, m_musicVolumdeSlider, m_SFXVolumeSlider, m_footStepsVolumeSlider;
 
     // Use this for initialization
 	void Start ()
@@ -16,10 +20,35 @@ public class AudioManager : MonoBehaviour
             Debug.Log("m_mainMixer not assigned!");
         }
 
+        if (m_masterVolumeSlider == null)
+        {
+            Debug.Log("m_masterVolumeSlider not assigned!");
+        }
+
+        if (m_musicVolumdeSlider == null)
+        {
+            Debug.Log("m_musicVolumdeSlider not assigned!");
+        }
+
+        if (m_SFXVolumeSlider == null)
+        {
+            Debug.Log("m_SFXVolumeSlider not assigned!");
+        }
+
+        if (m_footStepsVolumeSlider == null)
+        {
+            Debug.Log("m_footStepsVolumeSlider not assigned!");
+        }
+
+        m_masterVolumeSlider.value = GetMasterVolume();
+        m_musicVolumdeSlider.value = GetMusicVolume();
+        m_SFXVolumeSlider.value = GetSFXVolume();
+        m_footStepsVolumeSlider.value = GetFootStepVolume();
+
         m_mainMixer.SetFloat("MasterVolume", GetMasterVolume());
         m_mainMixer.SetFloat("MusicVolume", GetMusicVolume());
         m_mainMixer.SetFloat("SFXVolume", GetSFXVolume());
-        m_mainMixer.SetFloat("FootStepVolume", GetFootStepVolume());
+        m_mainMixer.SetFloat("FootStepsVolume", GetFootStepVolume());
     }
 	
 	// Update is called once per frame
@@ -52,8 +81,8 @@ public class AudioManager : MonoBehaviour
     public void SetFootStepVolume(float vol)
     {
         //Debug.Log("vol == " + vol.ToString());
-        PlayerPrefs.SetFloat("FootStepVolume", vol);
-        m_mainMixer.SetFloat("FootStepVolume", vol);
+        PlayerPrefs.SetFloat("FootStepsVolume", vol);
+        m_mainMixer.SetFloat("FootStepsVolume", vol);
     }
 
     public float GetMasterVolume()
@@ -77,6 +106,6 @@ public class AudioManager : MonoBehaviour
     public float GetFootStepVolume()
     {
         //Debug.Log("vol == " + vol.ToString());
-        return PlayerPrefs.GetFloat("FootStepVolume", -2.0f);
+        return PlayerPrefs.GetFloat("FootStepsVolume", -2.0f);
     }
 }

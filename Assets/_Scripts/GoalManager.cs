@@ -8,6 +8,8 @@ public class GoalManager : MonoBehaviour
 
     private PlayerController m_playerController;
 
+    private Rigidbody m_playerRB;
+
 	// Use this for initialization
 	void Start ()
     {
@@ -17,11 +19,18 @@ public class GoalManager : MonoBehaviour
             Debug.Log("m_gameManager not found!");
         }
 
-        m_playerController = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        m_playerController = player.GetComponent<PlayerController>();
         if (m_playerController == null)
         {
             Debug.Log("m_playerController not found!");
         }
+        m_playerRB = player.GetComponent<Rigidbody>();
+        if (m_playerRB == null)
+        {
+            Debug.Log("m_playerRB not found!");
+        }
+
     }
 	
 	// Update is called once per frame
@@ -37,6 +46,10 @@ public class GoalManager : MonoBehaviour
             Debug.Log("goaaal!");
 
             m_playerController.FreeFly();
+
+            m_playerRB.transform.rotation = Quaternion.LookRotation(-transform.forward);
+
+            m_playerRB.velocity += -transform.forward * 3000.0f;
 
             m_gameManager.LevelFinished();
         }

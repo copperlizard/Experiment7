@@ -71,14 +71,26 @@ public class CameraController : MonoBehaviour
             tarPos = lookTar + checkSightLine.normalized * m_minFollowDist;
         }
 
-        // Obstructed
+        // View Obstructed
+
+        //Debug.DrawLine(tarPos, tarPos - checkSightLine, Color.red);
+               
         RaycastHit hit;
         if (Physics.SphereCast(lookTar, m_cameraClearanceRadius, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.GetMask("Player", "Projectile", "PlayerBody"), QueryTriggerInteraction.Ignore))
         {
-            //Debug.Log("camera view obstructed by " + hit.collider.gameObject.name + "!");
+            Debug.Log("(SphereCast) camera view obstructed by " + hit.collider.gameObject.name + "!");
             
             tarPos = hit.point + hit.normal * m_cameraClearanceRadius;            
         }
+
+        if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.GetMask("Player", "Projectile", "PlayerBody"), QueryTriggerInteraction.Ignore))
+        {
+            Debug.Log("(Raycast) camera view obstructed by " + hit.collider.gameObject.name + "!");
+
+            tarPos = hit.point + hit.normal * m_cameraClearanceRadius;
+        }
+
+        // Check if move obstructed...
 
         float lerpMod = new Vector2(m_pan / m_panMax, m_tilt / m_tiltMax).magnitude;
         transform.position = Vector3.Lerp(transform.position, tarPos, (5.0f + 5.0f * lerpMod) * Time.deltaTime); 

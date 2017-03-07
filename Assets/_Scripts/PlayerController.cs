@@ -24,6 +24,7 @@ public class PlayerController : MonoBehaviour
     private GameManager m_gameManager;
 
     private AudioSource m_footStepsSoundEffectSource;
+    private AudioSource m_SFXsource;
 
     private Rigidbody m_playerRB;
 
@@ -63,10 +64,16 @@ public class PlayerController : MonoBehaviour
             Debug.Log("m_playerRB not found!");
         }
 
-        m_footStepsSoundEffectSource = GetComponent<AudioSource>();
+        m_footStepsSoundEffectSource = GetComponents<AudioSource>()[0];
         if (m_footStepsSoundEffectSource == null)
         {
-            Debug.Log("m_playerAudioSource not found!");
+            Debug.Log("m_footStepsSoundEffectSource not found!");
+        }
+
+        m_SFXsource = GetComponents<AudioSource>()[1];
+        if (m_SFXsource == null)
+        {
+            Debug.Log("m_SFXsource not found!");
         }
 
         m_playerAnimator = GetComponentInChildren<Animator>();
@@ -453,7 +460,7 @@ public class PlayerController : MonoBehaviour
     {
         float startTime = Time.time, endTime = startTime + m_sideStepDuration;
 
-        m_footStepsSoundEffectSource.PlayOneShot(m_airDashSound);
+        m_SFXsource.PlayOneShot(m_airDashSound);
 
         do
         {
@@ -496,7 +503,7 @@ public class PlayerController : MonoBehaviour
     {
         m_airDashing = true;
 
-        m_footStepsSoundEffectSource.PlayOneShot(m_airDashSound);
+        m_SFXsource.PlayOneShot(m_airDashSound);
 
         float startTime = Time.time, endTime = startTime + m_dashDuration;
 
@@ -559,7 +566,7 @@ public class PlayerController : MonoBehaviour
             m_grounded = false;
 
             m_dashParticles.Play();
-            m_footStepsSoundEffectSource.PlayOneShot(m_airDashSound);
+            m_SFXsource.PlayOneShot(m_airDashSound);
 
             StartCoroutine(Kicking());
         }
