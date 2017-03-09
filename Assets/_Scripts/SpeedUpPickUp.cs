@@ -64,7 +64,7 @@ public class SpeedUpPickUp : MonoBehaviour
 
         m_pickedUp = true;
 
-        Debug.Log("speed up!");
+        //Debug.Log("speed up!");
 
         m_playerController.AdjustSpeedMod(m_speedUp);
                 

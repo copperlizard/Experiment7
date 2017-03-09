@@ -10,6 +10,8 @@ public class GoalManager : MonoBehaviour
 
     private Rigidbody m_playerRB;
 
+    private bool m_finished = false;
+
 	// Use this for initialization
 	void Start ()
     {
@@ -43,15 +45,20 @@ public class GoalManager : MonoBehaviour
     {
         if (other.tag == "Player")
         {
-            Debug.Log("goaaal!");
+            if (!m_finished)
+            {
+                m_finished = true;
 
-            m_playerController.FreeFly();
+                //Debug.Log("goaaal!");
 
-            m_playerRB.transform.rotation = Quaternion.LookRotation(-transform.forward);
+                m_playerController.FreeFly();
 
-            m_playerRB.velocity += -transform.forward * 3000.0f;
+                m_playerRB.transform.rotation = Quaternion.LookRotation(-transform.forward);
 
-            m_gameManager.LevelFinished();
+                m_playerRB.velocity += -transform.forward * 3000.0f;
+
+                m_gameManager.LevelFinished();
+            }            
         }
     }
 }

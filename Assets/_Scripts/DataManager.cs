@@ -40,10 +40,11 @@ public class DataManager : MonoBehaviour
     {
         LoadRecords(SceneManager.GetActiveScene().buildIndex);
 
-        Debug.Log("adding record " + recTime.ToString());
+        //Debug.Log("adding record " + recTime.ToString());
 
         m_recs.Add(recTime);
 
+        /*
         Debug.Log("after add record");
         int i = 0;
         foreach (float num in m_recs)
@@ -52,9 +53,11 @@ public class DataManager : MonoBehaviour
             i++;
         }
         i = 0;
+        */
 
         m_recs.Sort();
 
+        /*
         Debug.Log(System.Environment.NewLine + "after list sort");
         foreach (float num in m_recs)
         {
@@ -62,9 +65,11 @@ public class DataManager : MonoBehaviour
             i++;
         }
         i = 0;
+        */
 
         m_recs.RemoveAt(m_recs.Count - 1);
 
+        /*
         Debug.Log(System.Environment.NewLine + "after remove item");
         foreach (float num in m_recs)
         {
@@ -72,6 +77,7 @@ public class DataManager : MonoBehaviour
             i++;
         }
         i = 0;
+        */
 
         SaveRecords(SceneManager.GetActiveScene().buildIndex);
 

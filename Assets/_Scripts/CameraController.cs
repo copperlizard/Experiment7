@@ -17,14 +17,14 @@ public class CameraController : MonoBehaviour
 
     [SerializeField]
     [Range(-180.0f, 0.0f)]
-    private float m_minFollowDist = 1.0f, m_tiltMin = -180.0f, m_panMin = -180.0f;
+    private float m_tiltMin = -180.0f, m_panMin = -180.0f;
 
     [SerializeField]
     [Range(0.0f, 180.0f)]
     private float m_tiltMax = 180.0f, m_panMax = 180.0f;
 
     [SerializeField]
-    private float m_cameraClearanceRadius = 0.2f;
+    private float m_cameraClearanceRadius = 0.2f, m_cameraMinFollowDist = 1.0f, m_cameraMaxFollowDist = 10.0f;
     //private float m_intersectionSepDist = 0.1f;
 
     private float m_pan = 0.0f, m_tilt = 0.0f;
@@ -56,43 +56,50 @@ public class CameraController : MonoBehaviour
     private void ChasePlayer ()
     {
         Vector3 tarPos = m_player.transform.position + m_player.transform.rotation * (Quaternion.Euler(m_tilt, m_pan, 0.0f) * m_boomVector);
-        //Vector3 tarPos = m_player.transform.position + m_player.transform.rotation * m_boomVector;
-
-        //tarPos = Quaternion.AngleAxis(m_tilt, m_player.transform.right) * (tarPos - m_player.transform.position) + m_player.transform.position;
-        //tarPos = Quaternion.AngleAxis(m_pan, m_player.transform.up) * (tarPos - m_player.transform.position) + m_player.transform.position;
-
-
         Vector3 lookTar = m_player.transform.position + m_player.transform.rotation * m_lookOffset;
+
+        RaycastHit hit;
+
+        // Check if move obstructed...
+        Vector3 move = tarPos - transform.position;
+        if (Physics.Raycast(transform.position, move.normalized, out hit, move.magnitude, ~LayerMask.GetMask("Player", "Projectile", "PlayerBody"), QueryTriggerInteraction.Ignore))
+        {
+            //Debug.Log("(Raycast) camera move obstructed by " + hit.collider.gameObject.name + "!");
+            //Debug.DrawLine(hit.point, hit.point + hit.normal, Color.yellow);
+                        
+            tarPos += hit.normal * m_cameraClearanceRadius;            
+        }
+
         Vector3 checkSightLine = tarPos - lookTar;
 
         // Too close
-        if (Vector3.Distance(tarPos, lookTar) < m_minFollowDist)
+        if (Vector3.Distance(tarPos, lookTar) < m_cameraMinFollowDist)
         {
-            tarPos = lookTar + checkSightLine.normalized * m_minFollowDist;
+            tarPos = lookTar + checkSightLine.normalized * m_cameraMinFollowDist;
         }
-
-        // View Obstructed
-
-        //Debug.DrawLine(tarPos, tarPos - checkSightLine, Color.red);
-               
-        RaycastHit hit;
+        
+        // Check for sightline obstruction        
         if (Physics.SphereCast(lookTar, m_cameraClearanceRadius, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.GetMask("Player", "Projectile", "PlayerBody"), QueryTriggerInteraction.Ignore))
         {
-            Debug.Log("(SphereCast) camera view obstructed by " + hit.collider.gameObject.name + "!");
+            //Debug.Log("(SphereCast) camera view obstructed by " + hit.collider.gameObject.name + "!");
             
             tarPos = hit.point + hit.normal * m_cameraClearanceRadius;            
         }
-
+        
+        // Needed to account for objects less than m_cameraClearanceRadius from player
         if (Physics.Raycast(lookTar, checkSightLine, out hit, checkSightLine.magnitude, ~LayerMask.GetMask("Player", "Projectile", "PlayerBody"), QueryTriggerInteraction.Ignore))
         {
-            Debug.Log("(Raycast) camera view obstructed by " + hit.collider.gameObject.name + "!");
+            //Debug.Log("(Raycast) camera view obstructed by " + hit.collider.gameObject.name + "!");
 
             tarPos = hit.point + hit.normal * m_cameraClearanceRadius;
         }
 
-        // Check if move obstructed...
+        //Debug.DrawLine(tarPos, tarPos - checkSightLine, Color.red);
+        //Debug.DrawLine(tarPos, transform.position, Color.blue);
 
-        float lerpMod = new Vector2(m_pan / m_panMax, m_tilt / m_tiltMax).magnitude;
+        float lerpModA = new Vector2(m_pan / m_panMax, m_tilt / m_tiltMax).magnitude;
+        float lerpModB = Mathf.SmoothStep(0.0f, 1.0f, (tarPos - transform.position).magnitude / m_cameraMaxFollowDist);
+        float lerpMod = Mathf.Max(lerpModA, lerpModB);
         transform.position = Vector3.Lerp(transform.position, tarPos, (5.0f + 5.0f * lerpMod) * Time.deltaTime); 
         transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up), (20.0f + 20.0f * lerpMod) * Time.deltaTime);
 
