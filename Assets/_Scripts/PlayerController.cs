@@ -36,9 +36,9 @@ public class PlayerController : MonoBehaviour
 
     private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_sideStep = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f;
 
-    private bool m_grounded = true, m_jumping = false, m_airDashing = false, m_airDashCancel = false, 
+    private bool m_grounded = true, /*m_jumping = false,*/ m_airDashing = false, m_airDashCancel = false, 
         m_stalled = false, m_shielding = false, m_freeFly = false, m_sideStepping = false, 
-        m_kicking = false, m_groundCheckSuspended = false;
+        m_kicking = false, m_groundCheckSuspended = false, m_jumpPad = false;
 
 	// Use this for initialization
 	void Start ()
@@ -278,7 +278,7 @@ public class PlayerController : MonoBehaviour
 
     public void Move (Vector2 move)
     {
-        if (!m_jumping && !m_freeFly && !m_sideStepping && !m_kicking && !m_groundCheckSuspended)
+        if (/*!m_jumping &&*/ !m_freeFly && !m_sideStepping && !m_kicking && !m_groundCheckSuspended)
         {
             GroundCheck();
         }
@@ -656,15 +656,27 @@ public class PlayerController : MonoBehaviour
         }
 
         m_grounded = false;
-        
-        StartCoroutine(Jumping());
+
+        //StartCoroutine(Jumping());
+        StartCoroutine(SuspendGroundCheck(0.1f));
 
         float momentum = m_speed / m_maxSpeed;
 
         Vector3 jumpV = Vector3.Lerp(transform.up, transform.up, momentum * 0.5f * Time.deltaTime);
-        m_playerRB.velocity += jumpV * m_jumpSpeed * m_jumpCharge;
+
+        if (!m_jumpPad)
+        {
+            m_playerRB.velocity += jumpV * m_jumpSpeed * m_jumpCharge;
+        }
+        else
+        {
+            m_dashParticles.Play();
+            m_SFXsource.PlayOneShot(m_airDashSound);
+            m_playerRB.velocity += jumpV * m_jumpSpeed * m_jumpCharge * 2.0f;
+        }
     }
 
+    /*
     private IEnumerator Jumping ()
     {
         m_jumping = true;
@@ -672,6 +684,7 @@ public class PlayerController : MonoBehaviour
         m_jumping = false;
         yield return null;
     }
+    */
 
     public void Shield (bool state)
     {
@@ -837,4 +850,9 @@ public class PlayerController : MonoBehaviour
         m_speedMod += delta;
         m_speedMod = Mathf.Clamp(m_speedMod, 0.0f, 2.0f);
     } 
+
+    public void SetJumpPad (bool state)
+    {
+        m_jumpPad = state;
+    }
 }

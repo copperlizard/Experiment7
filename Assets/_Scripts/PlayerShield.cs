@@ -12,6 +12,8 @@ public class PlayerShield : MonoBehaviour
 
     private PlayerController m_playerController;
 
+    private AudioSource m_audioSource;
+
 	// Use this for initialization
 	void Start ()
     {
@@ -20,11 +22,19 @@ public class PlayerShield : MonoBehaviour
         {
             Debug.Log("m_playerController not found!");
         }
-	}
+
+        m_audioSource = GetComponent<AudioSource>();
+        if (m_audioSource == null)
+        {
+            Debug.Log("m_audioSource not found!");
+        }
+    }
 	
 	// Update is called once per frame
 	void Update ()
     {
+        m_audioSource.pitch = Mathf.Lerp(m_audioSource.pitch, Random.Range(0.85f, 1.15f), 3.0f * Time.deltaTime);
+
 		if (transform.localScale.x < 0.95f)
         {
             Collider[] hitColliders = Physics.OverlapSphere(transform.position, transform.localScale.x + 0.1f, LayerMask.GetMask("Projectile"));

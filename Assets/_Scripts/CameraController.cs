@@ -37,7 +37,11 @@ public class CameraController : MonoBehaviour
 
 		if (m_player == null)
         {
-            Debug.Log("m_player not assigned!");
+            m_player = GameObject.FindGameObjectWithTag("Player");
+            if (m_player == null)
+            {
+                Debug.Log("m_player not found!");
+            }
         }
         else
         {
