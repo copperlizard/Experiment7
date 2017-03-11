@@ -81,7 +81,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\JumpPad.cs" />
     <Compile Include="Assets\Resources\Standard Assets\Effects\ImageEffects\Scripts\Antialiasing.cs" />
     <Compile Include="Assets\Resources\Standard Assets\Effects\ImageEffects\Scripts\Bloom.cs" />
     <Compile Include="Assets\Resources\Standard Assets\Effects\ImageEffects\Scripts\BloomAndFlares.cs" />
@@ -131,6 +130,7 @@
     <Compile Include="Assets\_Scripts\GameManager.cs" />
     <Compile Include="Assets\_Scripts\GoalManager.cs" />
     <Compile Include="Assets\_Scripts\HUDManager.cs" />
+    <Compile Include="Assets\_Scripts\JumpPad.cs" />
     <Compile Include="Assets\_Scripts\LevelManager.cs" />
     <Compile Include="Assets\_Scripts\MainMenuPanelManager.cs" />
     <Compile Include="Assets\_Scripts\MainMenuStateManager.cs" />
