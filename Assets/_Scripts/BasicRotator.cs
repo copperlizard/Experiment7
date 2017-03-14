@@ -23,4 +23,14 @@ public class BasicRotator : MonoBehaviour
     {
         transform.Rotate(m_rotation);
     }
+
+    public void SetRotation (Vector3 eulRot)
+    {
+        m_rotation = eulRot;
+    }
+
+    public Vector3 GetRotation ()
+    {
+        return m_rotation;
+    }
 }

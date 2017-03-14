@@ -127,6 +127,8 @@
     <Compile Include="Assets\_Scripts\CameraRenderDepth.cs" />
     <Compile Include="Assets\_Scripts\DataManager.cs" />
     <Compile Include="Assets\_Scripts\Destructible.cs" />
+    <Compile Include="Assets\_Scripts\FreezeTurret.cs" />
+    <Compile Include="Assets\_Scripts\FreezeTurretBullet.cs" />
     <Compile Include="Assets\_Scripts\GameManager.cs" />
     <Compile Include="Assets\_Scripts\GoalManager.cs" />
     <Compile Include="Assets\_Scripts\HUDManager.cs" />
@@ -135,6 +137,7 @@
     <Compile Include="Assets\_Scripts\MainMenuPanelManager.cs" />
     <Compile Include="Assets\_Scripts\MainMenuStateManager.cs" />
     <Compile Include="Assets\_Scripts\MenuPanelInput.cs" />
+    <Compile Include="Assets\_Scripts\ObjectPool.cs" />
     <Compile Include="Assets\_Scripts\PlayerController.cs" />
     <Compile Include="Assets\_Scripts\PlayerInput.cs" />
     <Compile Include="Assets\_Scripts\PlayerShield.cs" />
@@ -221,6 +224,7 @@
     <None Include="Assets\Resources\Standard Assets\Effects\ToonShading\Shaders\ToonBasicOutline.shader" />
     <None Include="Assets\Resources\Standard Assets\Effects\ToonShading\Shaders\ToonLit.shader" />
     <None Include="Assets\Resources\Standard Assets\Effects\ToonShading\Shaders\ToonLitOutline.shader" />
+    <None Include="Assets\_Shaders\01_AdditiveProjector.shader" />
     <None Include="Assets\_Shaders\01_KickShieldShader.shader" />
     <None Include="Assets\_Shaders\01_ShieldShader.shader" />
   </ItemGroup>

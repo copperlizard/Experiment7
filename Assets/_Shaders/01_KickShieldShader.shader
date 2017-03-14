@@ -42,7 +42,7 @@ Shader "Unlit/01_KickShieldShader"
 
 			struct v2f
 			{
-				float2 uv : TEXCOORD0;
+				//float2 uv : TEXCOORD0;
 				float2 screenuv : TEXCOORD1;
 				float3 viewDir : TEXCOORD2;
 				float3 objectPos : TEXCOORD3;
