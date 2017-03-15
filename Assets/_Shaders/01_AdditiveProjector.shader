@@ -19,7 +19,9 @@ Shader "Projector/01_AdditiveProjector"
 		{			
 			ZWrite Off
 			ColorMask RGB			
-			Blend One One
+			//Blend One One
+			//Blend SrcAlpha OneMinusSrcAlpha
+			Blend OneMinusDstColor One
 			Offset -1, -1
 
 			CGPROGRAM

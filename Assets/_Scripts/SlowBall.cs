@@ -188,4 +188,9 @@ public class SlowBall : Destructible
             }                         
         }
     }
+
+    public bool IsStuck ()
+    {
+        return m_stuck;
+    }
 }

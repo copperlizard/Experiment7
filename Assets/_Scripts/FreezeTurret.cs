@@ -5,33 +5,92 @@ using UnityEngine;
 public class FreezeTurret : MonoBehaviour
 {
     [SerializeField]
-    private float m_turretRotationSpeed = 15.0f;
+    private GameObject m_spinFX;
+
+    [SerializeField]
+    private float m_turretRotationSpeed = 15.0f, m_turretRotationAccellerationRate = 5.0f, m_fireRate = 1.0f, m_fireSpeed = 30.0f,
+        m_turretSpread = 1.5f, m_iceThawRate = 1.0f, m_iceSprayRadius = 0.25f;
 
     private GameObject m_player;
 
+    private PlayerController m_playerController;
+
     private BasicRotator m_turretRotator;
-    
+
+    private ObjectPool m_bulletPool, m_playerBodyProjectorPool, m_defaultProjectorPool;
+
+    private List<ProjectOnLayer> m_activeProjectors = new List<ProjectOnLayer>();
+
+    private float m_stackedSlowEffect = 0.0f, m_lastFiredAt = 0.0f;
+
     private bool m_playerDetected = false, m_lockOn = false, m_firing = false;
 
 	// Use this for initialization
 	void Start ()
     {
+        if (m_spinFX == null)
+        {
+            Debug.Log("m_spinFX not assigned!");
+        }
+
         m_player = GameObject.FindGameObjectWithTag("Player");
         if (m_player == null)
         {
             Debug.Log("m_player not found!");
         }
 
+        m_playerController = m_player.GetComponent<PlayerController>();
+        if (m_playerController == null)
+        {
+            Debug.Log("m_playerController not found!");
+        }
+
         m_turretRotator = GetComponentInChildren<BasicRotator>();
         if (m_turretRotator == null)
         {
             Debug.Log("m_turretRotator not found!");
-        }        
+        }
+
+        m_bulletPool = GetComponents<ObjectPool>()[0];
+        if (m_bulletPool == null)
+        {
+            Debug.Log("m_bulletPool not found!");
+        }
+
+        m_playerBodyProjectorPool = GetComponents<ObjectPool>()[1];
+        if (m_bulletPool == null)
+        {
+            Debug.Log("m_playerBodyProjectorPool not found!");
+        }
+
+        m_defaultProjectorPool = GetComponents<ObjectPool>()[2];
+        if (m_bulletPool == null)
+        {
+            Debug.Log("m_defaultProjectorPool not found!");
+        }
     }
 	
 	// Update is called once per frame
 	void Update ()
     {
+        float thaw = Mathf.Max(m_stackedSlowEffect - m_iceThawRate * Time.deltaTime, 0.0f);
+        float delta = m_stackedSlowEffect - thaw;
+        m_stackedSlowEffect -= delta;
+        m_playerController.AdjustSpeedMod(delta);
+                
+        for(int i = 0; i < m_activeProjectors.Count; i++)
+        {
+            m_activeProjectors[i].SetProjectorSize(Mathf.Lerp(m_activeProjectors[i].GetProjectorSize(), 0.0f, m_iceThawRate * Time.deltaTime));
+
+            if (m_activeProjectors[i].GetProjectorSize() <= 0.01f)
+            {
+                m_activeProjectors[i].SetProjectorSize(0.25f);
+                m_activeProjectors[i].gameObject.SetActive(false);
+                m_activeProjectors.RemoveAt(i);
+                i--;
+            }
+        }
+        
 		if (m_playerDetected && !m_lockOn) //Look at player
         {
             FacePlayer();
@@ -46,7 +105,12 @@ public class FreezeTurret : MonoBehaviour
         }
         else if (!m_firing && m_turretRotator.GetRotation().z > 0.0f) //Spin down turret
         {
+            if (m_spinFX.activeInHierarchy)
+            {
+                m_spinFX.SetActive(false);
+            }
 
+            m_turretRotator.SetRotation(new Vector3(0.0f, 0.0f, Mathf.Lerp(m_turretRotator.GetRotation().z, 0.0f, m_turretRotationAccellerationRate * Time.deltaTime)));
         }
 	}
 
@@ -68,6 +132,11 @@ public class FreezeTurret : MonoBehaviour
     private void LockOn ()
     {
         Vector3 toPlayer = (m_player.transform.position + m_player.transform.up * 1.3f) - transform.position;
+
+        if (!m_spinFX.activeInHierarchy)
+        {
+            m_spinFX.SetActive(true);
+        }
         
         transform.rotation = Quaternion.LookRotation(toPlayer.normalized);
 
@@ -85,7 +154,7 @@ public class FreezeTurret : MonoBehaviour
         }
         else 
         {
-            m_turretRotator.SetRotation(new Vector3(0.0f, 0.0f, Mathf.Lerp(z, m_turretRotationSpeed, 3.0f * Time.deltaTime)));
+            m_turretRotator.SetRotation(new Vector3(0.0f, 0.0f, Mathf.Lerp(z, m_turretRotationSpeed, m_turretRotationAccellerationRate * Time.deltaTime)));
         }
     }
 
@@ -94,6 +163,97 @@ public class FreezeTurret : MonoBehaviour
         Vector3 toPlayer = (m_player.transform.position + m_player.transform.up * 1.3f) - transform.position;
         
         transform.rotation = Quaternion.LookRotation(toPlayer.normalized);
+
+        if (Time.time > m_lastFiredAt + m_fireRate)
+        {
+            Debug.Log("Firing bullet!");
+
+            FreezeTurretBullet bullet = m_bulletPool.GetObject().GetComponent<FreezeTurretBullet>();
+            
+            if (bullet != null)
+            {
+                bullet.transform.position = transform.position + transform.forward;
+                bullet.gameObject.SetActive(true);
+                bullet.SetTurret(this);
+                
+                bullet.Fire(transform.rotation * Quaternion.Euler(Random.Range(-m_turretSpread, m_turretSpread), Random.Range(-m_turretSpread, m_turretSpread), Random.Range(-m_turretSpread, m_turretSpread)), m_fireSpeed);
+                m_lastFiredAt = Time.time;
+            }
+            else
+            {
+                Debug.Log("error getting freeze turret bullet!");
+            }
+        }
+    }
+
+    /*
+    void OnDrawGizmos()
+    {
+        Gizmos.DrawSphere(debugCenter, debugRadius);
+    }
+    */
+
+    //private Vector3 debugCenter;
+    //private float debugRadius;
+    public void SprayIce (Transform bullet)
+    {
+        Debug.Log("spray ice at " + bullet.position.ToString() + "!");
+
+        Collider[] hitColliders = Physics.OverlapSphere(bullet.position, m_iceSprayRadius, ~LayerMask.GetMask("Player"), QueryTriggerInteraction.Ignore);
+
+        //debugCenter = bullet.position;
+        //debugRadius = m_iceSprayRadius;
+        //Time.timeScale = 0.0f;
+
+        bool defSpray = false, playerSpray = false;
+
+        Transform playerHitTransform = null;
+        for (int i = 0; i < hitColliders.Length; i++)  // CHECK FOR STUCK SLOWBALLS AND MOVE TO DEFAULT LAYER!!!
+        {
+            Debug.Log("ice overlap with " + hitColliders[i].name);
+            Debug.DrawLine(bullet.position, hitColliders[i].transform.position, Color.red);
+            
+            if (hitColliders[i].tag == "PlayerBody")
+            {
+                Debug.Log("ice hit player!");
+                playerHitTransform = hitColliders[i].transform;
+                playerSpray = true;
+            }
+            else if (hitColliders[i].gameObject.layer == LayerMask.GetMask("Defualt"))
+            {
+                Debug.Log("ice hit level!");
+
+                defSpray = true;
+            }
+        }
+
+        if (playerSpray)
+        {
+            ProjectOnLayer sprayProjector = m_playerBodyProjectorPool.GetObject().GetComponent<ProjectOnLayer>();
+            sprayProjector.transform.position = bullet.position;
+            sprayProjector.transform.rotation = bullet.rotation;
+            sprayProjector.transform.parent = playerHitTransform;
+            sprayProjector.gameObject.SetActive(true);
+
+            m_activeProjectors.Add(sprayProjector);
+
+            m_stackedSlowEffect += 0.1f;
+            m_playerController.AdjustSpeedMod(-0.1f);
+
+            Debug.Log("PlayerBody Projector added!");
+        }
+
+        if (defSpray)
+        {
+            ProjectOnLayer sprayProjector = m_defaultProjectorPool.GetObject().GetComponent<ProjectOnLayer>();
+            sprayProjector.transform.position = bullet.position;
+            sprayProjector.transform.rotation = bullet.rotation;
+            sprayProjector.gameObject.SetActive(true);
+
+            m_activeProjectors.Add(sprayProjector);
+
+            Debug.Log("default Projector added!");
+        }
     }
 
     private void OnTriggerStay(Collider other)
