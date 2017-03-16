@@ -122,13 +122,58 @@ public class FreezeTurret : MonoBehaviour
 
     private Vector3 PredictAim () //returns line to player not player pos
     {
-        if (m_playerRB.velocity.magnitude < 3.0f) //too slow, no prediction
+        if (m_playerRB.velocity.magnitude < 1.0f) //too slow, no prediction
         {            
             return ((m_player.transform.position + m_player.transform.up * 1.3f) - transform.position);
         }
 
+        Vector3 A = (m_player.transform.position + m_player.transform.up * 1.3f) + m_playerRB.velocity.normalized; 
+        Vector3 p = (m_player.transform.position + m_player.transform.up * 1.3f);
+
+        //Debug.DrawLine(A, p, Color.white);
+
+        float dif = 100.0f;
+        int loops = 0, looplim = 30;
+        while (Mathf.Abs(dif) > 1.0f && loops <= looplim)
+        {
+            Vector3 pA = A - p;
+
+            //Debug.DrawLine(p, p + pA, Color.yellow * Mathf.SmoothStep(0.5f, 1.0f, (loops / looplim)));
+
+            Vector3 tA = A - transform.position;
+
+            float t = pA.magnitude / m_playerRB.velocity.magnitude; //time for player to reach A            
+            //Debug.Log("t == " + t.ToString() + " ; pA.magnitude == " + pA.magnitude.ToString() + " ; m_playerRB.velocity.magnitude == " + m_playerRB.velocity.magnitude.ToString());
+
+            Vector3 bulletMove = ((tA.normalized * m_fireSpeed) * t); //bullet path in t
+
+            //Debug.DrawLine(transform.position, transform.position + bulletMove, Color.red * Mathf.SmoothStep(0.5f, 1.0f, (loops / looplim)));
+
+            dif = ((transform.position + bulletMove) - A).magnitude;
+            
+            /*
+            if (Vector3.Dot(A - (transform.position + bulletMove), bulletMove) < -0.9f)
+            {
+                dif = -dif;
+            } 
+            */
+            
+            A += m_playerRB.velocity.normalized * Mathf.Min(dif, 1.0f); //push cp along AB by dif
+
+            loops++;
+        }
+
+        //Debug.Log("dif == " + dif.ToString());
+        Debug.Log("loops == " + loops.ToString());
+
+        Debug.DrawLine(transform.position, A, Color.green);
+        Debug.DrawLine(p, A, Color.black);
+
+        return (A - transform.position).normalized;
+
+        /*
         Vector3 A = (m_player.transform.position + m_player.transform.up * 1.3f); //offset to aim at chest
-        Vector3 P = (transform.position + transform.forward); //fire pos
+        Vector3 P = transform.position; //account for fire pos offset later
         Vector3 AB = (m_player.transform.position + m_playerRB.velocity.normalized * 500.0f) - A; //B is A+500m in current velocity dir
         Vector3 AP = (P - A); 
 
@@ -139,29 +184,43 @@ public class FreezeTurret : MonoBehaviour
 
         float dif = 100.0f;
         int loops = 0, looplim = 100;
-        while (dif > 0.5f && loops <= looplim)
+        while (Mathf.Abs(dif) > 1.0f && loops <= looplim)
         {
             Vector3 Pcp = cp - P; //fire pos to cp
             Vector3 Acp = cp - A; //player to cp
 
             float t = Acp.magnitude / m_playerRB.velocity.magnitude; //time for player to reach cp
+            Debug.Log("Acp.magnitude == " + Acp.magnitude.ToString());
+            //Debug.Log("m_playerRB.velocity.magnitude == " + m_playerRB.velocity.magnitude.ToString());
+            //Debug.Log("t == " + t.ToString());
 
             Vector3 bulletMove = ((Pcp.normalized * m_fireSpeed) * t); //bullet path in t
 
             Debug.DrawLine(P, P + bulletMove, Color.red);
 
-            dif = Pcp.magnitude - bulletMove.magnitude; //bullet dist from cp
+            dif = Pcp.magnitude - bulletMove.magnitude; //bullet dist from cp, accounting for fire pos offset
+            
+            if (Vector3.Dot(((cp + AB.normalized * dif) - A).normalized, m_playerRB.velocity.normalized) < -0.9f)
+            {
+                Debug.Log("cp would be behind player!");
+                dif = Mathf.Abs(dif);
+            }
 
             cp += AB.normalized * dif; //push cp along AB by dif
 
             loops++;
         }
 
+        
+        Debug.Log("dif == " + dif.ToString());
         Debug.Log("loops == " + loops.ToString());
         Debug.DrawLine(A, cp, Color.black);
         Debug.DrawLine(P, cp, Color.green);
 
-        return cp - P;
+        Debug.Log("(cp - P).magnitude == " + (cp - P).magnitude.ToString());
+
+        return (cp - P).normalized;
+        */
     }
 
     private void FacePlayer ()
