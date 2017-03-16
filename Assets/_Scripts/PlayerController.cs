@@ -851,6 +851,11 @@ public class PlayerController : MonoBehaviour
         m_speedMod = Mathf.Clamp(m_speedMod, 0.0f, 2.0f);
     } 
 
+    public float GetSpeedMod ()
+    {
+        return m_speedMod;
+    }
+
     public void SetJumpPad (bool state)
     {
         m_jumpPad = state;

@@ -12,8 +12,8 @@ public class FreezeTurret : MonoBehaviour
         m_turretSpread = 1.5f, m_iceThawRate = 1.0f, m_iceSprayRadius = 0.25f;
 
     private GameObject m_player;
-
     private PlayerController m_playerController;
+    private Rigidbody m_playerRB;
 
     private BasicRotator m_turretRotator;
 
@@ -43,6 +43,12 @@ public class FreezeTurret : MonoBehaviour
         if (m_playerController == null)
         {
             Debug.Log("m_playerController not found!");
+        }
+
+        m_playerRB = m_player.GetComponent<Rigidbody>();
+        if (m_playerRB == null)
+        {
+            Debug.Log("m_playerRB not found!");
         }
 
         m_turretRotator = GetComponentInChildren<BasicRotator>();
@@ -114,9 +120,53 @@ public class FreezeTurret : MonoBehaviour
         }
 	}
 
+    private Vector3 PredictAim () //returns line to player not player pos
+    {
+        if (m_playerRB.velocity.magnitude < 3.0f) //too slow, no prediction
+        {            
+            return ((m_player.transform.position + m_player.transform.up * 1.3f) - transform.position);
+        }
+
+        Vector3 A = (m_player.transform.position + m_player.transform.up * 1.3f); //offset to aim at chest
+        Vector3 P = (transform.position + transform.forward); //fire pos
+        Vector3 AB = (m_player.transform.position + m_playerRB.velocity.normalized * 500.0f) - A; //B is A+500m in current velocity dir
+        Vector3 AP = (P - A); 
+
+        Vector3 cp = A + Vector3.Dot(AP, AB) / Vector3.Dot(AB, AB) * AB; //project fire pos onto player "velocity" vector
+
+        Debug.DrawLine(A, A + AB.normalized * 500.0f, Color.blue);
+        Debug.DrawLine(P, cp, Color.yellow);
+
+        float dif = 100.0f;
+        int loops = 0, looplim = 100;
+        while (dif > 0.5f && loops <= looplim)
+        {
+            Vector3 Pcp = cp - P; //fire pos to cp
+            Vector3 Acp = cp - A; //player to cp
+
+            float t = Acp.magnitude / m_playerRB.velocity.magnitude; //time for player to reach cp
+
+            Vector3 bulletMove = ((Pcp.normalized * m_fireSpeed) * t); //bullet path in t
+
+            Debug.DrawLine(P, P + bulletMove, Color.red);
+
+            dif = Pcp.magnitude - bulletMove.magnitude; //bullet dist from cp
+
+            cp += AB.normalized * dif; //push cp along AB by dif
+
+            loops++;
+        }
+
+        Debug.Log("loops == " + loops.ToString());
+        Debug.DrawLine(A, cp, Color.black);
+        Debug.DrawLine(P, cp, Color.green);
+
+        return cp - P;
+    }
+
     private void FacePlayer ()
     {
-        Vector3 toPlayer = (m_player.transform.position + m_player.transform.up * 1.3f) - transform.position;
+        Vector3 toPlayer = PredictAim();
 
         if (Vector3.Dot(transform.forward, toPlayer.normalized) > 0.85f)
         {
@@ -131,7 +181,7 @@ public class FreezeTurret : MonoBehaviour
 
     private void LockOn ()
     {
-        Vector3 toPlayer = (m_player.transform.position + m_player.transform.up * 1.3f) - transform.position;
+        Vector3 toPlayer = PredictAim();
 
         if (!m_spinFX.activeInHierarchy)
         {
@@ -160,13 +210,13 @@ public class FreezeTurret : MonoBehaviour
 
     private void Fire ()
     {
-        Vector3 toPlayer = (m_player.transform.position + m_player.transform.up * 1.3f) - transform.position;
+        Vector3 toPlayer = PredictAim();
         
         transform.rotation = Quaternion.LookRotation(toPlayer.normalized);
 
         if (Time.time > m_lastFiredAt + m_fireRate)
         {
-            Debug.Log("Firing bullet!");
+            //Debug.Log("Firing bullet!");
 
             FreezeTurretBullet bullet = m_bulletPool.GetObject().GetComponent<FreezeTurretBullet>();
             
@@ -181,7 +231,7 @@ public class FreezeTurret : MonoBehaviour
             }
             else
             {
-                Debug.Log("error getting freeze turret bullet!");
+                //Debug.Log("error getting freeze turret bullet!");
             }
         }
     }
@@ -197,7 +247,7 @@ public class FreezeTurret : MonoBehaviour
     //private float debugRadius;
     public void SprayIce (Transform bullet)
     {
-        Debug.Log("spray ice at " + bullet.position.ToString() + "!");
+        //Debug.Log("spray ice at " + bullet.position.ToString() + "!");
 
         Collider[] hitColliders = Physics.OverlapSphere(bullet.position, m_iceSprayRadius, ~LayerMask.GetMask("Player"), QueryTriggerInteraction.Ignore);
 
@@ -210,18 +260,18 @@ public class FreezeTurret : MonoBehaviour
         Transform playerHitTransform = null;
         for (int i = 0; i < hitColliders.Length; i++)  // CHECK FOR STUCK SLOWBALLS AND MOVE TO DEFAULT LAYER!!!
         {
-            Debug.Log("ice overlap with " + hitColliders[i].name);
+            //Debug.Log("ice overlap with " + hitColliders[i].name);
             Debug.DrawLine(bullet.position, hitColliders[i].transform.position, Color.red);
             
             if (hitColliders[i].tag == "PlayerBody")
             {
-                Debug.Log("ice hit player!");
+                //Debug.Log("ice hit player!");
                 playerHitTransform = hitColliders[i].transform;
                 playerSpray = true;
             }
             else if (hitColliders[i].gameObject.layer == LayerMask.GetMask("Defualt"))
             {
-                Debug.Log("ice hit level!");
+                //Debug.Log("ice hit level!");
 
                 defSpray = true;
             }
@@ -237,10 +287,13 @@ public class FreezeTurret : MonoBehaviour
 
             m_activeProjectors.Add(sprayProjector);
 
-            m_stackedSlowEffect += 0.1f;
-            m_playerController.AdjustSpeedMod(-0.1f);
+            if (m_playerController.GetSpeedMod() >= 0.1f)
+            {
+                m_stackedSlowEffect += 0.1f;
+                m_playerController.AdjustSpeedMod(-0.1f);
+            }
 
-            Debug.Log("PlayerBody Projector added!");
+            //Debug.Log("PlayerBody Projector added!");
         }
 
         if (defSpray)
@@ -252,7 +305,7 @@ public class FreezeTurret : MonoBehaviour
 
             m_activeProjectors.Add(sprayProjector);
 
-            Debug.Log("default Projector added!");
+            //Debug.Log("default Projector added!");
         }
     }
 
