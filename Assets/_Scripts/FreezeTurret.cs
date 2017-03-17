@@ -79,10 +79,13 @@ public class FreezeTurret : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
     {
-        float thaw = Mathf.Max(m_stackedSlowEffect - m_iceThawRate * Time.deltaTime, 0.0f);
-        float delta = m_stackedSlowEffect - thaw;
-        m_stackedSlowEffect -= delta;
-        m_playerController.AdjustSpeedMod(delta);
+        if (m_stackedSlowEffect > 0.0f)
+        {
+            float thaw = Mathf.Max(m_stackedSlowEffect - m_iceThawRate * Time.deltaTime, 0.0f);
+            float delta = m_stackedSlowEffect - thaw;
+            m_stackedSlowEffect -= delta;
+            m_playerController.AdjustSpeedMod(delta);
+        }        
                 
         for(int i = 0; i < m_activeProjectors.Count; i++)
         {
@@ -121,11 +124,12 @@ public class FreezeTurret : MonoBehaviour
 	}
 
     private Vector3 PredictAim () //returns line to player not player pos
-    {
+    {       
         if (m_playerRB.velocity.magnitude < 1.0f) //too slow, no prediction
         {            
             return ((m_player.transform.position + m_player.transform.up * 1.3f) - transform.position);
         }
+        
 
         Vector3 A = (m_player.transform.position + m_player.transform.up * 1.3f) + m_playerRB.velocity.normalized; 
         Vector3 p = (m_player.transform.position + m_player.transform.up * 1.3f);
@@ -134,7 +138,7 @@ public class FreezeTurret : MonoBehaviour
 
         float dif = 100.0f;
         int loops = 0, looplim = 30;
-        while (Mathf.Abs(dif) > 1.0f && loops <= looplim)
+        while (Mathf.Abs(dif) > 0.5f && loops <= looplim)
         {
             Vector3 pA = A - p;
 
@@ -147,29 +151,35 @@ public class FreezeTurret : MonoBehaviour
 
             Vector3 bulletMove = ((tA.normalized * m_fireSpeed) * t); //bullet path in t
 
-            //Debug.DrawLine(transform.position, transform.position + bulletMove, Color.red * Mathf.SmoothStep(0.5f, 1.0f, (loops / looplim)));
+            Debug.DrawLine(transform.position, transform.position + bulletMove, Color.red * Mathf.SmoothStep(0.5f, 1.0f, (loops / looplim)));
 
             dif = ((transform.position + bulletMove) - A).magnitude;
             
-            /*
-            if (Vector3.Dot(A - (transform.position + bulletMove), bulletMove) < -0.9f)
+            
+            if (Vector3.Dot((A - transform.position).normalized, (A - (transform.position + bulletMove)).normalized) < -0.9f)
             {
                 dif = -dif;
             } 
-            */
             
-            A += m_playerRB.velocity.normalized * Mathf.Min(dif, 1.0f); //push cp along AB by dif
+            
+            A += m_playerRB.velocity.normalized * Mathf.Min(dif, 3.0f); //push A
 
             loops++;
         }
 
         //Debug.Log("dif == " + dif.ToString());
-        Debug.Log("loops == " + loops.ToString());
+        //Debug.Log("loops == " + loops.ToString());
 
         Debug.DrawLine(transform.position, A, Color.green);
         Debug.DrawLine(p, A, Color.black);
 
-        return (A - transform.position).normalized;
+        Vector3 toPredPlayerPos = (A - transform.position).normalized;
+        float jerk = Mathf.SmoothStep(0.0f, 1.0f, (Vector3.Dot(transform.forward, toPredPlayerPos) + 1.0f) * 0.5f);
+        Vector3 aim = Vector3.Lerp(transform.forward, toPredPlayerPos, jerk);
+
+        //Debug.Log("jerk == " + jerk.ToString());
+
+        return aim;
 
         /*
         Vector3 A = (m_player.transform.position + m_player.transform.up * 1.3f); //offset to aim at chest
@@ -225,7 +235,7 @@ public class FreezeTurret : MonoBehaviour
 
     private void FacePlayer ()
     {
-        Vector3 toPlayer = PredictAim();
+        Vector3 toPlayer = ((m_player.transform.position + m_player.transform.up * 1.3f) - transform.position);
 
         if (Vector3.Dot(transform.forward, toPlayer.normalized) > 0.85f)
         {
