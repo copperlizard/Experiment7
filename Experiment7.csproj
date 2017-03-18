@@ -122,6 +122,7 @@
     <Compile Include="Assets\_Scripts\AudioManager.cs" />
     <Compile Include="Assets\_Scripts\BasicRotator.cs" />
     <Compile Include="Assets\_Scripts\BoomBox.cs" />
+    <Compile Include="Assets\_Scripts\BounceBox.cs" />
     <Compile Include="Assets\_Scripts\CameraController.cs" />
     <Compile Include="Assets\_Scripts\CameraInput.cs" />
     <Compile Include="Assets\_Scripts\CameraRenderDepth.cs" />

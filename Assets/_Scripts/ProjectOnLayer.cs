@@ -12,7 +12,7 @@ public class ProjectOnLayer : MonoBehaviour
     private Material m_projectorMat;
 
 	// Use this for initialization
-	void Start ()
+	void Awake ()
     {
         m_projector = GetComponent<Projector>();
         if (m_projector == null)
@@ -20,7 +20,8 @@ public class ProjectOnLayer : MonoBehaviour
             Debug.Log("m_projector not found!");
         }
 
-        m_projectorMat = m_projector.material;
+        m_projectorMat = new Material(m_projector.material); //create unique mat for each projector
+        m_projector.material = m_projectorMat;
 
         m_projector.ignoreLayers = ~m_projectOn;
 	}

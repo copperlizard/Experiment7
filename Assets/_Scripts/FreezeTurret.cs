@@ -20,7 +20,7 @@ public class FreezeTurret : MonoBehaviour
     private ObjectPool m_bulletPool, m_playerBodyProjectorPool, m_defaultProjectorPool;
 
     private List<ProjectOnLayer> m_activeProjectors = new List<ProjectOnLayer>();
-
+    
     private float m_stackedSlowEffect = 0.0f, m_lastFiredAt = 0.0f;
 
     private bool m_playerDetected = false, m_lockOn = false, m_firing = false;
@@ -91,13 +91,15 @@ public class FreezeTurret : MonoBehaviour
         {
             m_activeProjectors[i].SetProjectorSize(Mathf.Lerp(m_activeProjectors[i].GetProjectorSize(), 0.0f, m_iceThawRate * Time.deltaTime));
 
+            m_activeProjectors[i].SetProjectorColor(Color.white * (m_activeProjectors[i].GetProjectorSize() / 0.25f));
+
             if (m_activeProjectors[i].GetProjectorSize() <= 0.01f)
             {
                 m_activeProjectors[i].SetProjectorSize(0.25f);
                 m_activeProjectors[i].gameObject.SetActive(false);
                 m_activeProjectors.RemoveAt(i);
                 i--;
-            }
+            }                
         }
         
 		if (m_playerDetected && !m_lockOn) //Look at player
@@ -125,7 +127,7 @@ public class FreezeTurret : MonoBehaviour
 
     private Vector3 PredictAim () //returns line to player not player pos
     {       
-        if (m_playerRB.velocity.magnitude < 1.0f) //too slow, no prediction
+        if (m_playerRB.velocity.magnitude < 5.0f) //too slow, no prediction
         {            
             return ((m_player.transform.position + m_player.transform.up * 1.3f) - transform.position);
         }
@@ -352,6 +354,7 @@ public class FreezeTurret : MonoBehaviour
             sprayProjector.transform.position = bullet.position;
             sprayProjector.transform.rotation = bullet.rotation;
             sprayProjector.transform.parent = playerHitTransform;
+            sprayProjector.SetProjectorColor(Color.white);            
             sprayProjector.gameObject.SetActive(true);
 
             m_activeProjectors.Add(sprayProjector);
@@ -370,6 +373,7 @@ public class FreezeTurret : MonoBehaviour
             ProjectOnLayer sprayProjector = m_defaultProjectorPool.GetObject().GetComponent<ProjectOnLayer>();
             sprayProjector.transform.position = bullet.position;
             sprayProjector.transform.rotation = bullet.rotation;
+            sprayProjector.SetProjectorColor(Color.white);
             sprayProjector.gameObject.SetActive(true);
 
             m_activeProjectors.Add(sprayProjector);

@@ -1,7 +1,4 @@
-﻿// Upgrade NOTE: replaced '_Projector' with 'unity_Projector'
-// Upgrade NOTE: replaced '_ProjectorClip' with 'unity_ProjectorClip'
-
-Shader "Projector/01_AdditiveProjector"
+﻿Shader "Projector/01_AdditiveProjector"
 {
 	Properties
 	{
@@ -28,6 +25,7 @@ Shader "Projector/01_AdditiveProjector"
 
 			#pragma vertex vert
 			#pragma fragment frag
+			//#pragma multi_compile_instancing
 			#pragma multi_compile_fog
 			#include "UnityCG.cginc"
 
@@ -35,6 +33,7 @@ Shader "Projector/01_AdditiveProjector"
 			{
 				float4 vertex : POSITION;
 				float2 texcoord : TEXCOORD0;
+				//UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
 			struct v2f 
@@ -44,7 +43,12 @@ Shader "Projector/01_AdditiveProjector"
 				half2 uvTexcoord : TEXCOORD2;
 				UNITY_FOG_COORDS(2)
 				float4 pos : SV_POSITION;
+				//UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
+
+			//UNITY_INSTANCING_CBUFFER_START(MyProperties)
+			//UNITY_DEFINE_INSTANCED_PROP(float4, _Color)
+			//UNITY_INSTANCING_CBUFFER_END
 
 			float4x4 unity_Projector;
 			float4x4 unity_ProjectorClip;
@@ -56,24 +60,28 @@ Shader "Projector/01_AdditiveProjector"
 			v2f vert(appdata_base v)
 			{
 				v2f o;
+				//UNITY_SETUP_INSTANCE_ID(v);
+				//UNITY_TRANSFER_INSTANCE_ID(v, o);
 				o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 				o.uvShadow = mul(unity_Projector, v.vertex);
 				o.uvFalloff = mul(unity_ProjectorClip, v.vertex);
 				o.uvTexcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
 				UNITY_TRANSFER_FOG(o,o.pos);
+				
 				return o;
-			}
-
-			fixed4 _Color;
+			}			
 			
+			float4 _Color;
+
 			sampler2D _ShadowTex;
 			sampler2D _FalloffTex;
 
 			fixed4 frag(v2f i) : SV_Target
 			{	
+				//UNITY_SETUP_INSTANCE_ID(i);
 				fixed4 texS = tex2Dproj(_ShadowTex, UNITY_PROJ_COORD(i.uvShadow));
 				fixed4 texF = tex2Dproj(_FalloffTex, UNITY_PROJ_COORD(i.uvFalloff));
-				fixed4 col = (tex2D(_MainTex, i.uvTexcoord) * _Color.a) * (texS * texF.a);
+				fixed4 col = (tex2D(_MainTex, i.uvTexcoord) * UNITY_ACCESS_INSTANCED_PROP(_Color).a) * (texS * texF.a);
 				UNITY_APPLY_FOG_COLOR(i.fogCoord, col, fixed4(1, 1, 1, 1));				
 				return col;
 			}
