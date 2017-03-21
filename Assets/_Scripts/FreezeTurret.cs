@@ -17,6 +17,8 @@ public class FreezeTurret : MonoBehaviour
 
     private BasicRotator m_turretRotator;
 
+    private AudioSource m_audioSource;
+
     private ObjectPool m_bulletPool, m_playerBodyProjectorPool, m_defaultProjectorPool;
 
     private List<ProjectOnLayer> m_activeProjectors = new List<ProjectOnLayer>();
@@ -31,6 +33,12 @@ public class FreezeTurret : MonoBehaviour
         if (m_spinFX == null)
         {
             Debug.Log("m_spinFX not assigned!");
+        }
+
+        m_audioSource = GetComponent<AudioSource>();
+        if (m_audioSource == null)
+        {
+            Debug.Log("m_audioSource not found!");
         }
 
         m_player = GameObject.FindGameObjectWithTag("Player");
@@ -298,6 +306,7 @@ public class FreezeTurret : MonoBehaviour
                 bullet.SetTurret(this);
                 
                 bullet.Fire(transform.rotation * Quaternion.Euler(Random.Range(-m_turretSpread, m_turretSpread), Random.Range(-m_turretSpread, m_turretSpread), Random.Range(-m_turretSpread, m_turretSpread)), m_fireSpeed);
+                m_audioSource.PlayOneShot(m_audioSource.clip);
                 m_lastFiredAt = Time.time;
             }
             else

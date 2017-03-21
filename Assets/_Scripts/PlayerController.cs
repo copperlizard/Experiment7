@@ -860,4 +860,24 @@ public class PlayerController : MonoBehaviour
     {
         m_jumpPad = state;
     }
+
+    public void Bounce (Vector3 n, float bounceForce)
+    {
+        //−(2(n · v) n − v) = a
+
+        Debug.Log("bounce!");
+
+        Vector3 v = m_playerRB.velocity;
+
+        Vector3 a = -(2 * (Vector3.Dot(n, v) * n - v));
+
+        m_playerRB.velocity = a.normalized * m_playerRB.velocity.magnitude + n * bounceForce;
+
+        m_grounded = false;
+        StartCoroutine(SuspendGroundCheck(1.0f));
+
+        //Debug.DrawLine(transform.position, transform.position + v, Color.gray);
+        //Debug.DrawLine(transform.position, transform.position + m_playerRB.velocity, Color.red);
+        //Time.timeScale = 0.0f;
+    }
 }

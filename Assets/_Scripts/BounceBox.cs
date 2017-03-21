@@ -38,8 +38,7 @@ public class BounceBox : MonoBehaviour
         }
         else if (collision.gameObject.tag == "Player")
         {
-            m_playerController.AddExplosionForce(m_bounceForce, collision.contacts[0].point, 1.0f);
-            collision.rigidbody.velocity += collision.contacts[0].normal * m_bounceForce;
+            m_playerController.Bounce(collision.contacts[0].normal, m_bounceForce);
         }
     }
 
