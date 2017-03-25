@@ -13,7 +13,7 @@ public class LevelManager : MonoBehaviour
     private int m_visibleDetails = 0;
 
 	// Use this for initialization
-	void Start ()
+	void Awake ()
     {
         m_mainMenuStateManager = GameObject.FindGameObjectWithTag("MainMenuStateManager").GetComponent<MainMenuStateManager>();
         if (m_mainMenuStateManager == null)
