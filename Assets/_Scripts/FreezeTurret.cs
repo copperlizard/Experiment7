@@ -315,39 +315,33 @@ public class FreezeTurret : MonoBehaviour
             }
         }
     }
-
-    /*
-    void OnDrawGizmos()
-    {
-        Gizmos.DrawSphere(debugCenter, debugRadius);
-    }
-    */
-
-    //private Vector3 debugCenter;
-    //private float debugRadius;
+        
     public void SprayIce (Transform bullet)
     {
         //Debug.Log("spray ice at " + bullet.position.ToString() + "!");
 
-        Collider[] hitColliders = Physics.OverlapSphere(bullet.position, m_iceSprayRadius, ~LayerMask.GetMask("Player"), QueryTriggerInteraction.Ignore);
-
-        //debugCenter = bullet.position;
-        //debugRadius = m_iceSprayRadius;
-        //Time.timeScale = 0.0f;
+        Collider[] hitColliders = Physics.OverlapSphere(bullet.position, m_iceSprayRadius, ~LayerMask.GetMask("Player"), QueryTriggerInteraction.Ignore);        
 
         bool defSpray = false, playerSpray = false;
 
         Transform playerHitTransform = null;
+        float dist = 9999.9f;
         for (int i = 0; i < hitColliders.Length; i++)  // CHECK FOR STUCK SLOWBALLS AND MOVE TO DEFAULT LAYER!!!
         {
             //Debug.Log("ice overlap with " + hitColliders[i].name);
-            Debug.DrawLine(bullet.position, hitColliders[i].transform.position, Color.red);
             
             if (hitColliders[i].tag == "PlayerBody")
             {
-                //Debug.Log("ice hit player!");
-                playerHitTransform = hitColliders[i].transform;
-                playerSpray = true;
+                //float dToBodyPart = (bullet.position - hitColliders[i].transform.position).magnitude;
+                float dToBodyPart = (bullet.position - hitColliders[i].ClosestPointOnBounds(bullet.position)).magnitude;
+
+                if (dToBodyPart < dist) //find body part closest to center of ice spray
+                {
+                    //Debug.Log("ice hit player!");
+                    playerHitTransform = hitColliders[i].transform;
+                    playerSpray = true;
+                    dist = dToBodyPart;
+                }
             }
             else if (hitColliders[i].gameObject.layer == LayerMask.GetMask("Defualt"))
             {
