@@ -166,12 +166,12 @@ public class BoomBox : MonoBehaviour
                         //object has parent                        
                         if (hitColliders[i].transform.parent.gameObject.layer != LayerMask.NameToLayer("PlayerBody"))
                         {
-                            hitRB.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius, 0.5f);
+                            hitRB.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius, 0.5f, ForceMode.Impulse);
                         }
                     }
                     else
                     {
-                        hitRB.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius, 0.5f);
+                        hitRB.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius, 0.5f, ForceMode.Impulse);
                     }
                 }
             }            

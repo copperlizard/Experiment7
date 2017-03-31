@@ -12,9 +12,11 @@ public class FirstBossController : MonoBehaviour
 
     private LineRenderer m_leftLazer, m_rightLazer;
 
+    private ObjectPool m_cannonAmmo;
+
     private Vector3 m_tarPos;
 
-    private bool m_leftArmLocked = false, m_rightArmLocked = false, m_leftArmFiring = false, m_rightArmFiring = false;
+    private bool m_leftArmLocked = false, m_rightArmLocked = false, m_firing = false, m_leftArmFiring = false, m_rightArmFiring = false;
 
     // Use this for initialization
     void Start ()
@@ -66,21 +68,35 @@ public class FirstBossController : MonoBehaviour
         {
             Debug.Log("m_rightTarget not assigned!");
         }
+
+        m_cannonAmmo = GetComponentInChildren<ObjectPool>();
+        if (m_cannonAmmo == null)
+        {
+            Debug.Log("m_cannonAmmo not assigned!");
+        }
+
+        m_leftTarget.transform.parent = null;
+        m_rightTarget.transform.parent = null;
     }
 	
 	// Update is called once per frame
 	void Update ()
     {
         FacePlayer();
-
-        //Lock arms when firing...
-
+        
         AimGunArm(m_leftArm);
-        AimGunArm(m_rightArm);        
+        AimGunArm(m_rightArm);
     }
 
     void FacePlayer ()
-    {
+    {       
+        /* 
+        if (m_leftArmLocked || m_rightArmLocked)
+        {
+            return;
+        }
+        */
+
         Vector3 toPlayer = m_player.transform.position - transform.position;
 
         toPlayer = Vector3.ProjectOnPlane(toPlayer, transform.up);
@@ -117,6 +133,8 @@ public class FirstBossController : MonoBehaviour
 
     IEnumerator GunArmFire (GameObject arm)
     {
+        m_firing = true;
+
         Vector3 tarPos;
         RaycastHit hit;
 
@@ -165,10 +183,69 @@ public class FirstBossController : MonoBehaviour
             }
 
             yield return null;
-        } while (startTime + 3.0f > Time.time);       
+        } while (startTime + 3.0f > Time.time);
+        
+        if (arm == m_leftArm)
+        {
+            m_leftArmLocked = true;
+        }
+        else if (arm == m_rightArm)
+        {
+            m_rightArmLocked = true;
+        }
 
-      
         //Fire
+        GameObject ball = m_cannonAmmo.GetObject();
+        ball.transform.position = arm.transform.position + arm.transform.forward * 10.0f;
+
+        ball.SetActive(true);
+
+        Rigidbody ballRB = ball.GetComponent<Rigidbody>();
+        ballRB.velocity = arm.transform.forward * 200.0f;
+
+        m_firing = false;
+
+        //Wait
+        //yield return new WaitForSeconds(3.0f);
+        startTime = Time.time;
+
+        do
+        {
+            if (arm == m_leftArm)
+            {
+                //Visualize aim
+
+                m_leftLazer.SetPosition(0, arm.transform.position);
+                m_leftLazer.SetPosition(1, tarPos);
+
+                if (!m_leftTarget.activeInHierarchy)
+                {
+                    m_leftTarget.SetActive(true);
+                }
+
+                m_leftTarget.transform.position = tarPos;
+                m_leftTarget.transform.up = hit.normal;
+            }
+            else if (arm == m_rightArm)
+            {
+                //Visualize aim
+
+                m_rightLazer.SetPosition(0, arm.transform.position);
+                m_rightLazer.SetPosition(1, tarPos);
+
+                if (!m_rightTarget.activeInHierarchy)
+                {
+                    m_rightTarget.SetActive(true);
+                }
+
+                m_rightTarget.transform.position = tarPos;
+                m_rightTarget.transform.up = hit.normal;
+            }
+
+            yield return null;
+        } while (startTime + 3.0f > Time.time);
+
+        //Done
         if (arm == m_leftArm)
         {
             if (m_leftTarget.activeInHierarchy)
@@ -178,6 +255,9 @@ public class FirstBossController : MonoBehaviour
 
             m_leftLazer.SetPosition(0, Vector3.zero);
             m_leftLazer.SetPosition(1, Vector3.zero);
+
+            m_leftArmFiring = false;
+            m_leftArmLocked = false;
         }
         else if (arm == m_rightArm)
         {
@@ -188,47 +268,65 @@ public class FirstBossController : MonoBehaviour
 
             m_rightLazer.SetPosition(0, Vector3.zero);
             m_rightLazer.SetPosition(1, Vector3.zero);
-        }
 
-        //Wait
-        yield return new WaitForSeconds(3.0f);
-
-        //Done
-        if (arm == m_leftArm)
-        {
-            m_leftArmFiring = false;
-            m_leftArmLocked = false;
-        }
-        else if (arm == m_rightArm)
-        {
             m_rightArmFiring = false;
             m_rightArmLocked = false;
         }
+
+        //Cooldown
+        yield return new WaitForSeconds(3.0f);
 
         yield return null;
     }
 
     void AimGunArm (GameObject arm)
     {
-        Vector3 toPlayer = m_player.transform.position - arm.transform.position;
-
-        float a = Vector3.Dot(toPlayer.normalized, transform.forward);
-        if (a > 0.65f)
+        if (arm == m_leftArm)
         {
-            Quaternion tarRot = Quaternion.LookRotation(toPlayer.normalized);
+            if (!m_leftArmLocked)
+            {
+                AimAtTarget(arm, m_player);
+            }
+            else
+            {
+                Debug.Log("left arm locked aiming at target!");
+                AimAtTarget(arm, m_leftTarget);
+            }
+        }
+        else if (arm == m_rightArm)
+        {
+            if (!m_rightArmLocked)
+            {
+                AimAtTarget(arm, m_player);
+            }
+            else
+            {
+                AimAtTarget(arm, m_rightTarget);
+            }
+        }       
+    }
+
+    void AimAtTarget(GameObject arm, GameObject target)
+    {
+        Vector3 toTarget = target.transform.position - arm.transform.position;
+
+        float a = Vector3.Dot(toTarget.normalized, transform.forward);
+        if (a > 0.85f)
+        {
+            Quaternion tarRot = Quaternion.LookRotation(toTarget.normalized);
             arm.transform.rotation = Quaternion.RotateTowards(arm.transform.rotation, tarRot, m_maxAimSpeed);
             //arm.transform.rotation = Quaternion.Slerp(arm.transform.rotation, tarRot, m_maxAimSpeed * Time.deltaTime);
 
-            if (a > 0.95f)
+            if (a > 0.95f && !m_firing)
             {
                 FireGunArm(arm);
-            }   
-        }        
+            }
+        }
         else
         {
             Quaternion tarRot = Quaternion.LookRotation(transform.forward);
             arm.transform.rotation = Quaternion.RotateTowards(arm.transform.rotation, tarRot, m_maxAimSpeed);
             //arm.transform.rotation = Quaternion.Slerp(arm.transform.rotation, tarRot, m_maxAimSpeed * Time.deltaTime);
-        }        
+        }
     }
 }

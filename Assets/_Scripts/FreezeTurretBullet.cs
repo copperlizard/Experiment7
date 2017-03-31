@@ -106,7 +106,7 @@ public class FreezeTurretBullet : Destructible
         m_fired = true;
     }
 
-    public void OnCollisionEnter(Collision collision)
+    private void OnCollisionEnter(Collision collision)
     {
         //Debug.Log("bullet hit " + collision.gameObject.name);
 

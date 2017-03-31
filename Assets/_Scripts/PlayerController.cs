@@ -789,13 +789,13 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        float upForce = force * upMod;
+        float upForce = force * upMod * Mathf.SmoothStep(1.0f, 0.0f, ((transform.position - pos).magnitude / radius));
 
         force -= upForce;
 
         StartCoroutine(SuspendGroundCheck(0.5f));
-        m_playerRB.AddExplosionForce(force, pos, radius);
-        m_playerRB.AddForce(transform.up * upForce);
+        m_playerRB.AddExplosionForce(force, pos, radius, 0.0f, ForceMode.Impulse);
+        m_playerRB.AddForce(transform.up * upForce, ForceMode.Impulse);
     }
 
     private IEnumerator SuspendGroundCheck (float duration)
