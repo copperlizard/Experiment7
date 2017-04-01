@@ -36,9 +36,9 @@ public class PlayerController : MonoBehaviour
 
     private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_sideStep = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f;
 
-    private bool m_grounded = true, /*m_jumping = false,*/ m_airDashing = false, m_airDashCancel = false, 
+    private bool m_grounded = true, m_airDashing = false, m_airDashCancel = false, 
         m_stalled = false, m_shielding = false, m_freeFly = false, m_sideStepping = false, 
-        m_kicking = false, m_groundCheckSuspended = false, m_jumpPad = false;
+        m_kicking = false, m_groundCheckSuspended = false, m_jumpPad = false, m_bounce = false;
 
 	// Use this for initialization
 	void Start ()
@@ -526,7 +526,7 @@ public class PlayerController : MonoBehaviour
             m_flying = Mathf.Lerp(m_flying, fly, m_flightTransitionRate * Time.deltaTime);
 
             yield return null;
-        } while (Time.time <= endTime && !m_airDashCancel && !m_freeFly);
+        } while (Time.time <= endTime && !m_airDashCancel && !m_freeFly && !m_bounce);
 
         do
         {
@@ -589,7 +589,7 @@ public class PlayerController : MonoBehaviour
             }
 
             yield return null;
-        } while(Time.time <= endTime && !m_freeFly);
+        } while(Time.time <= endTime && !m_freeFly && !m_bounce);
 
         //DeVisualize shield
         m_playerKickShield.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
@@ -675,16 +675,6 @@ public class PlayerController : MonoBehaviour
             m_playerRB.velocity += jumpV * m_jumpSpeed * m_jumpCharge * 2.0f;
         }
     }
-
-    /*
-    private IEnumerator Jumping ()
-    {
-        m_jumping = true;
-        yield return new WaitForSeconds(0.1f);
-        m_jumping = false;
-        yield return null;
-    }
-    */
 
     public void Shield (bool state)
     {
@@ -804,6 +794,7 @@ public class PlayerController : MonoBehaviour
         m_groundCheckSuspended = true;
         yield return new WaitForSeconds(duration);
         m_groundCheckSuspended = false;
+        m_bounce = false;
         yield return null;
     }
 
@@ -864,7 +855,7 @@ public class PlayerController : MonoBehaviour
     public void Bounce (Vector3 n, float bounceForce)
     {
         //−(2(n · v) n − v) = a
-
+        m_bounce = true;
         Debug.Log("bounce!");
 
         Vector3 v = m_playerRB.velocity;

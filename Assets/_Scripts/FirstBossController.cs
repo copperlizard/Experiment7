@@ -5,10 +5,12 @@ using UnityEngine;
 public class FirstBossController : MonoBehaviour
 {
     [SerializeField]
-    private GameObject m_player, m_leftArm, m_rightArm, m_leftTarget, m_rightTarget;
+    private GameObject m_player, m_leftArm, m_rightArm, m_leftTarget, m_rightTarget, m_shield;
 
     [SerializeField]
     private float m_maxTurnSpeed = 15.0f, m_maxAimSpeed = 15.0f;
+
+    private PlayerController m_playerController;
 
     private LineRenderer m_leftLazer, m_rightLazer;
 
@@ -16,7 +18,8 @@ public class FirstBossController : MonoBehaviour
 
     private Vector3 m_tarPos;
 
-    private bool m_leftArmLocked = false, m_rightArmLocked = false, m_firing = false, m_leftArmFiring = false, m_rightArmFiring = false;
+    private bool m_leftArmLocked = false, m_rightArmLocked = false, m_firing = false, m_leftArmFiring = false, 
+        m_rightArmFiring = false, m_weakPointHit = false, m_shielding = false;
 
     // Use this for initialization
     void Start ()
@@ -27,8 +30,14 @@ public class FirstBossController : MonoBehaviour
 
             if (m_player == null)
             {
-                Debug.Log("m_player not found!");
+                Debug.Log("m_player not assigned or found!");
             }
+        }
+
+        m_playerController = m_player.GetComponent<PlayerController>();
+        if (m_playerController == null)
+        {
+            Debug.Log("m_playerController not found!");
         }
 
         if (m_leftArm == null)
@@ -82,21 +91,43 @@ public class FirstBossController : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
     {
-        FacePlayer();
-        
-        AimGunArm(m_leftArm);
-        AimGunArm(m_rightArm);
+        if (Time.timeScale > 0.0f && !m_weakPointHit)
+        {
+            FacePlayer();
+
+            AimGunArm(m_leftArm);
+            AimGunArm(m_rightArm);
+        }        
+    }
+
+    void BossShield ()
+    {
+        if (!m_shielding)
+        {
+            m_shielding = true;
+            StartCoroutine(BossShielding());
+        }
+    }
+
+    IEnumerator BossShielding ()
+    {
+        m_shield.SetActive(true);
+
+        do
+        {
+            Debug.Log("...");
+
+            float x = Mathf.Min(1.0f, m_shield.transform.localScale.x + 3.0f * Time.deltaTime);
+            m_shield.transform.localScale = new Vector3(x, x, x);
+
+            yield return null;
+        } while (m_shield.transform.localScale.x < 1.0f);
+
+        yield return null;
     }
 
     void FacePlayer ()
-    {       
-        /* 
-        if (m_leftArmLocked || m_rightArmLocked)
-        {
-            return;
-        }
-        */
-
+    {
         Vector3 toPlayer = m_player.transform.position - transform.position;
 
         toPlayer = Vector3.ProjectOnPlane(toPlayer, transform.up);
@@ -113,7 +144,7 @@ public class FirstBossController : MonoBehaviour
         {
             if (!m_leftArmFiring)
             {
-                Debug.Log("left arm fire!");
+                //Debug.Log("left arm fire!");
 
                 m_leftArmFiring = true;
                 StartCoroutine(GunArmFire(arm));
@@ -123,7 +154,7 @@ public class FirstBossController : MonoBehaviour
         {
             if (!m_rightArmFiring)
             {
-                Debug.Log("right arm fire!");
+                //Debug.Log("right arm fire!");
 
                 m_rightArmFiring = true;
                 StartCoroutine(GunArmFire(arm));
@@ -243,7 +274,7 @@ public class FirstBossController : MonoBehaviour
             }
 
             yield return null;
-        } while (startTime + 3.0f > Time.time);
+        } while (startTime + 1.0f > Time.time);
 
         //Done
         if (arm == m_leftArm)
@@ -288,8 +319,7 @@ public class FirstBossController : MonoBehaviour
                 AimAtTarget(arm, m_player);
             }
             else
-            {
-                Debug.Log("left arm locked aiming at target!");
+            {                
                 AimAtTarget(arm, m_leftTarget);
             }
         }
@@ -311,7 +341,28 @@ public class FirstBossController : MonoBehaviour
         Vector3 toTarget = target.transform.position - arm.transform.position;
 
         float a = Vector3.Dot(toTarget.normalized, transform.forward);
-        if (a > 0.85f)
+        float b = Vector3.Dot(toTarget.normalized, transform.right);
+        
+        bool aimObstructed = false;
+
+        
+        if (arm == m_leftArm)
+        {
+            if (b > 0.5f)
+            {
+                aimObstructed = true;
+            }
+        }
+        else if (arm == m_rightArm)
+        {
+            if (b < -0.5f)
+            {
+                aimObstructed = true;
+            }
+        }
+        
+
+        if (!aimObstructed && a > 0.0f)
         {
             Quaternion tarRot = Quaternion.LookRotation(toTarget.normalized);
             arm.transform.rotation = Quaternion.RotateTowards(arm.transform.rotation, tarRot, m_maxAimSpeed);
@@ -328,5 +379,16 @@ public class FirstBossController : MonoBehaviour
             arm.transform.rotation = Quaternion.RotateTowards(arm.transform.rotation, tarRot, m_maxAimSpeed);
             //arm.transform.rotation = Quaternion.Slerp(arm.transform.rotation, tarRot, m_maxAimSpeed * Time.deltaTime);
         }
+    }
+
+    public void HitWeakPoint (Vector3 normal)
+    {
+        Debug.Log("hit weakpoint!");
+        m_weakPointHit = true;
+
+        m_playerController.SetAirDashes(m_playerController.GetAirDashes() + 1.5f);
+        m_playerController.Bounce(normal, 30.0f);
+
+        BossShield();
     }
 }

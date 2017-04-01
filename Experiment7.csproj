@@ -130,6 +130,7 @@
     <Compile Include="Assets\_Scripts\DataManager.cs" />
     <Compile Include="Assets\_Scripts\Destructible.cs" />
     <Compile Include="Assets\_Scripts\FirstBossController.cs" />
+    <Compile Include="Assets\_Scripts\FirstBossWeakPoint.cs" />
     <Compile Include="Assets\_Scripts\FreezeTurret.cs" />
     <Compile Include="Assets\_Scripts\FreezeTurretBullet.cs" />
     <Compile Include="Assets\_Scripts\GameManager.cs" />
