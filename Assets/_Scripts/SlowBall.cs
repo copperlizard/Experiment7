@@ -24,19 +24,20 @@ public class SlowBall : Destructible
 
     private Vector3 m_startLocalPos;
 
-    private bool m_playerDetected = false, m_stuck = false, m_destructed = false;
+    private bool m_playerDetected = false, m_stuck = false, m_destructed = false, m_smoking = false, m_slowing = false;
 
     public override void Destruct()
     {
-        if (m_destructed)
+        if (m_destructed || m_smoking)
         {
             return;
         }
 
         m_destructed = true;
 
-        if (m_stuck)
+        if (m_stuck && m_slowing)
         {
+            m_slowing = false;
             m_playerController.AdjustSpeedMod(0.05f);
         }        
 
@@ -49,10 +50,31 @@ public class SlowBall : Destructible
 
     private IEnumerator WaitForSmoke ()
     {
+        m_smoking = true;
+
         m_ballAudioSource.PlayOneShot(m_destructionSound, 0.1f);
         yield return new WaitForSeconds(0.25f);
-        m_destruction.SetActive(false);        
-        Destroy(gameObject);
+        m_destruction.SetActive(false);    
+        
+        if (m_triggerZone != null)
+        {
+            Destroy(gameObject);
+        }    
+        else
+        {
+            m_sphere.SetActive(true);
+
+            m_ballRB = gameObject.AddComponent<Rigidbody>();
+            m_ballRB.useGravity = false;
+            m_ballRB.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            
+            gameObject.SetActive(false);
+
+            m_destructed = false;
+            m_stuck = false;
+        }
+
+        m_smoking = false;
     }
 
     // Use this for initialization
@@ -80,34 +102,44 @@ public class SlowBall : Destructible
             Debug.Log("m_destruction not found!");
         }
         
-        m_triggerZone = GetComponentInParent<SlowBallTriggerZone>();
-        if (m_triggerZone == null)
-        {
-            Debug.Log("m_triggerZone not found!");
-        }
-
-        m_player = m_triggerZone.GetPlayer();
-        if (m_player == null)
-        {
-            Debug.Log("m_player not found!");
-        }
-
         m_ballAudioSource = GetComponent<AudioSource>();
         if (m_ballAudioSource == null)
         {
             Debug.Log("m_ballAudioSource not found!");
         }
 
-        m_playerController = m_triggerZone.GetPlayerController();
-        if (m_playerController == null)
-        {
-            Debug.Log("m_playerController not found!");
-        }
-
         m_ballRB = GetComponent<Rigidbody>();
         if (m_ballRB == null)
         {
-            Debug.Log("m_playerRB not found!");
+            Debug.Log("m_playerRB not found!");            
+        }
+
+        m_triggerZone = GetComponentInParent<SlowBallTriggerZone>();
+        if (m_triggerZone == null)
+        {
+            Debug.Log("m_triggerZone not assigned or found!");
+            m_playerDetected = true;
+
+            m_player = GameObject.FindGameObjectWithTag("Player");
+            m_playerController = m_player.GetComponent<PlayerController>();
+
+            m_ballAudioSource.Play();
+            m_light.enabled = true;
+        }
+        else
+        {
+            m_player = m_triggerZone.GetPlayer();
+            m_playerController = m_triggerZone.GetPlayerController();
+        }
+
+        if (m_player == null)
+        {
+            Debug.Log("m_player not found!");
+        }
+
+        if (m_playerController == null)
+        {
+            Debug.Log("m_playerController not found!");
         }
 
         m_startLocalPos = transform.localPosition;
@@ -120,11 +152,18 @@ public class SlowBall : Destructible
         {
             if (!m_playerDetected)
             {
-                m_playerDetected = m_triggerZone.PlayerDetected();
+                if (m_triggerZone != null)
+                {
+                    m_playerDetected = m_triggerZone.PlayerDetected();
+                }                
 
                 if (m_playerDetected)
-                {                    
-                    m_ballRB.velocity = m_triggerZone.transform.TransformVector(m_startLocalPos.normalized * m_followSpeed);
+                {
+                    if (m_triggerZone != null)
+                    {
+                        m_ballRB.velocity = m_triggerZone.transform.TransformVector(m_startLocalPos.normalized * m_followSpeed);
+                    }                                        
+                    
                     transform.parent = null;
                     m_ballAudioSource.Play();
                     m_light.enabled = true;
@@ -176,14 +215,17 @@ public class SlowBall : Destructible
                 m_stuck = true;
                 m_light.enabled = false;
 
-                if (!m_playerController.PlayerIsShielded())
+                if (!m_slowing)
                 {
+                    m_slowing = true;
                     m_playerController.AdjustSpeedMod(-0.05f);
                 }
                 
                 transform.parent = collision.collider.gameObject.transform;
-                Destroy(m_ballRB);
 
+                m_ballRB.velocity = Vector3.zero;
+                Destroy(m_ballRB);
+                
                 transform.position += -collision.contacts[0].normal * (transform.localScale.x * 0.5f);
             }                         
         }

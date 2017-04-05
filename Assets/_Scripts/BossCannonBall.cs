@@ -80,9 +80,9 @@ public class BossCannonBall : Destructible
             {
                 m_playerController.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius, 0.5f);
             }
-            else if (hitColliders[i].attachedRigidbody != null)
+            else if (hitColliders[i].attachedRigidbody != null && hitColliders[i].gameObject.layer != LayerMask.GetMask("Projectile"))
             {
-                hitColliders[i].attachedRigidbody.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius, 0.5f, ForceMode.Impulse);
+                //hitColliders[i].attachedRigidbody.AddExplosionForce(m_explosionForce, transform.position, m_explosionRadius, 0.5f, ForceMode.Impulse);
             }
         }
     }

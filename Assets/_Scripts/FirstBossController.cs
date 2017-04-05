@@ -5,7 +5,8 @@ using UnityEngine;
 public class FirstBossController : MonoBehaviour
 {
     [SerializeField]
-    private GameObject m_player, m_leftArm, m_rightArm, m_leftTarget, m_rightTarget, m_shield;
+    private GameObject m_player, m_leftArm, m_rightArm, m_leftTarget, 
+        m_rightTarget, m_shield, m_slowBallSpawnPointsParent;
 
     [SerializeField]
     private float m_maxTurnSpeed = 15.0f, m_maxAimSpeed = 15.0f;
@@ -14,7 +15,9 @@ public class FirstBossController : MonoBehaviour
 
     private LineRenderer m_leftLazer, m_rightLazer;
 
-    private ObjectPool m_cannonAmmo;
+    private ObjectPool m_cannonAmmo, m_slowBalls;
+
+    private Transform[] m_slowBallSpawnPoints;
 
     private Vector3 m_tarPos;
 
@@ -38,6 +41,15 @@ public class FirstBossController : MonoBehaviour
         if (m_playerController == null)
         {
             Debug.Log("m_playerController not found!");
+        }
+
+        if (m_slowBallSpawnPointsParent == null)
+        {
+            Debug.Log("m_slowBallSpawnPointsParent not assigned!");
+        }
+        else
+        {
+            m_slowBallSpawnPoints = m_slowBallSpawnPointsParent.GetComponentsInChildren<Transform>();
         }
 
         if (m_leftArm == null)
@@ -78,10 +90,16 @@ public class FirstBossController : MonoBehaviour
             Debug.Log("m_rightTarget not assigned!");
         }
 
-        m_cannonAmmo = GetComponentInChildren<ObjectPool>();
+        m_cannonAmmo = GetComponentsInChildren<ObjectPool>()[0];
         if (m_cannonAmmo == null)
         {
-            Debug.Log("m_cannonAmmo not assigned!");
+            Debug.Log("m_cannonAmmo not found!");
+        }
+
+        m_slowBalls = GetComponentsInChildren<ObjectPool>()[1];
+        if (m_slowBalls == null)
+        {
+            Debug.Log("m_slowBalls not found!");
         }
 
         m_leftTarget.transform.parent = null;
@@ -113,15 +131,31 @@ public class FirstBossController : MonoBehaviour
     {
         m_shield.SetActive(true);
 
+        foreach (Transform spawnpoint in m_slowBallSpawnPoints)
+        {
+            GameObject slowBall = m_slowBalls.GetObject();
+            slowBall.transform.position = spawnpoint.position;
+            slowBall.SetActive(true);
+
+            Rigidbody slowBallRB = slowBall.GetComponent<Rigidbody>();
+            slowBallRB.velocity += Vector3.up * 20.0f;
+        }
+
         do
         {
-            Debug.Log("...");
-
-            float x = Mathf.Min(1.0f, m_shield.transform.localScale.x + 3.0f * Time.deltaTime);
-            m_shield.transform.localScale = new Vector3(x, x, x);
+            float s = Mathf.Min(1.0f, m_shield.transform.localScale.x + 3.0f * Time.deltaTime);
+            m_shield.transform.localScale = Vector3.one * s;
 
             yield return null;
         } while (m_shield.transform.localScale.x < 1.0f);
+
+        yield return new WaitForSeconds(10.0f);
+
+        m_shield.transform.localScale = Vector3.zero;
+        m_shield.SetActive(false);
+
+        m_shielding = false;
+        m_weakPointHit = false;
 
         yield return null;
     }
@@ -344,7 +378,6 @@ public class FirstBossController : MonoBehaviour
         float b = Vector3.Dot(toTarget.normalized, transform.right);
         
         bool aimObstructed = false;
-
         
         if (arm == m_leftArm)
         {
@@ -359,8 +392,7 @@ public class FirstBossController : MonoBehaviour
             {
                 aimObstructed = true;
             }
-        }
-        
+        }        
 
         if (!aimObstructed && a > 0.0f)
         {
@@ -368,7 +400,7 @@ public class FirstBossController : MonoBehaviour
             arm.transform.rotation = Quaternion.RotateTowards(arm.transform.rotation, tarRot, m_maxAimSpeed);
             //arm.transform.rotation = Quaternion.Slerp(arm.transform.rotation, tarRot, m_maxAimSpeed * Time.deltaTime);
 
-            if (a > 0.95f && !m_firing)
+            if (a > 0.90f && !m_firing)
             {
                 FireGunArm(arm);
             }

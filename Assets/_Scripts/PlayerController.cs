@@ -182,13 +182,15 @@ public class PlayerController : MonoBehaviour
         //Debug.Log("fallen!");
 
         float startmod = m_speedMod;
-        float stagger = 0.5f;
+        float stagger = Mathf.Min(0.5f, m_speedMod);
         m_speedMod -= stagger;
 
+        /*
         if (m_speedMod < 0.0f)
         {
             m_speedMod = 0.0f;
         }
+        */
 
         while (stagger > 0.0f)
         {
@@ -836,10 +838,19 @@ public class PlayerController : MonoBehaviour
 
     public void AdjustSpeedMod (float delta)
     {
-        //Debug.Log("adjust speed mod delta == " + delta.ToString());
-
         m_speedMod += delta;
-        m_speedMod = Mathf.Clamp(m_speedMod, 0.0f, 2.0f);
+        //m_speedMod = Mathf.Clamp(m_speedMod, 0.0f, 2.0f);
+
+        if (m_speedMod < 0.0f)
+        {
+            m_speedMod = 0.0f;
+        }
+        else if (m_speedMod > 2.0f)
+        {
+            m_speedMod = 2.0f;
+        }
+
+        Debug.Log("adjust speed mod delta == " + delta.ToString() + " ; m_speedMod == " + m_speedMod.ToString());
     } 
 
     public float GetSpeedMod ()
