@@ -415,6 +415,8 @@ public class FirstBossController : MonoBehaviour
 
     public void HitWeakPoint (Vector3 normal)
     {
+        //ADD CHECK FOR IS PLAYER KICKING!
+
         Debug.Log("hit weakpoint!");
         m_weakPointHit = true;
 

@@ -92,7 +92,8 @@ public class FreezeTurret : MonoBehaviour
             float thaw = Mathf.Max(m_stackedSlowEffect - m_iceThawRate * Time.deltaTime, 0.0f);
             float delta = m_stackedSlowEffect - thaw;
             m_stackedSlowEffect -= delta;
-            m_playerController.AdjustSpeedMod(delta);
+            //m_playerController.AdjustSpeedMod(delta);
+            m_playerController.AdjustIceMod(delta);
         }        
                 
         for(int i = 0; i < m_activeProjectors.Count; i++)
@@ -190,57 +191,6 @@ public class FreezeTurret : MonoBehaviour
         //Debug.Log("jerk == " + jerk.ToString());
 
         return aim;
-
-        /*
-        Vector3 A = (m_player.transform.position + m_player.transform.up * 1.3f); //offset to aim at chest
-        Vector3 P = transform.position; //account for fire pos offset later
-        Vector3 AB = (m_player.transform.position + m_playerRB.velocity.normalized * 500.0f) - A; //B is A+500m in current velocity dir
-        Vector3 AP = (P - A); 
-
-        Vector3 cp = A + Vector3.Dot(AP, AB) / Vector3.Dot(AB, AB) * AB; //project fire pos onto player "velocity" vector
-
-        Debug.DrawLine(A, A + AB.normalized * 500.0f, Color.blue);
-        Debug.DrawLine(P, cp, Color.yellow);
-
-        float dif = 100.0f;
-        int loops = 0, looplim = 100;
-        while (Mathf.Abs(dif) > 1.0f && loops <= looplim)
-        {
-            Vector3 Pcp = cp - P; //fire pos to cp
-            Vector3 Acp = cp - A; //player to cp
-
-            float t = Acp.magnitude / m_playerRB.velocity.magnitude; //time for player to reach cp
-            Debug.Log("Acp.magnitude == " + Acp.magnitude.ToString());
-            //Debug.Log("m_playerRB.velocity.magnitude == " + m_playerRB.velocity.magnitude.ToString());
-            //Debug.Log("t == " + t.ToString());
-
-            Vector3 bulletMove = ((Pcp.normalized * m_fireSpeed) * t); //bullet path in t
-
-            Debug.DrawLine(P, P + bulletMove, Color.red);
-
-            dif = Pcp.magnitude - bulletMove.magnitude; //bullet dist from cp, accounting for fire pos offset
-            
-            if (Vector3.Dot(((cp + AB.normalized * dif) - A).normalized, m_playerRB.velocity.normalized) < -0.9f)
-            {
-                Debug.Log("cp would be behind player!");
-                dif = Mathf.Abs(dif);
-            }
-
-            cp += AB.normalized * dif; //push cp along AB by dif
-
-            loops++;
-        }
-
-        
-        Debug.Log("dif == " + dif.ToString());
-        Debug.Log("loops == " + loops.ToString());
-        Debug.DrawLine(A, cp, Color.black);
-        Debug.DrawLine(P, cp, Color.green);
-
-        Debug.Log("(cp - P).magnitude == " + (cp - P).magnitude.ToString());
-
-        return (cp - P).normalized;
-        */
     }
 
     private void FacePlayer ()
@@ -362,10 +312,11 @@ public class FreezeTurret : MonoBehaviour
 
             m_activeProjectors.Add(sprayProjector);
 
-            if (m_playerController.GetSpeedMod() >= 0.1f)
+            if (m_playerController.GetIceMod() >= 0.1f)
             {
                 m_stackedSlowEffect += 0.1f;
-                m_playerController.AdjustSpeedMod(-0.1f);
+                //m_playerController.AdjustSpeedMod(-0.1f);
+                m_playerController.AdjustIceMod(-0.1f);
             }
 
             //Debug.Log("PlayerBody Projector added!");

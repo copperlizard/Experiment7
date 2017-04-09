@@ -24,6 +24,8 @@ public class SlowBall : Destructible
 
     private Vector3 m_startLocalPos;
 
+    private float m_amountSlowed = 0.0f;
+
     private bool m_playerDetected = false, m_stuck = false, m_destructed = false, m_smoking = false, m_slowing = false;
 
     public override void Destruct()
@@ -38,7 +40,7 @@ public class SlowBall : Destructible
         if (m_stuck && m_slowing)
         {
             m_slowing = false;
-            m_playerController.AdjustSpeedMod(0.05f);
+            m_playerController.AdjustSpeedMod(m_amountSlowed);
         }        
 
         m_sphere.SetActive(false);
@@ -56,25 +58,27 @@ public class SlowBall : Destructible
         yield return new WaitForSeconds(0.25f);
         m_destruction.SetActive(false);    
         
-        if (m_triggerZone != null)
+        if (m_triggerZone != null) //Not recycled
         {
             Destroy(gameObject);
+            yield break;
         }    
-        else
+        
+        m_destructed = false;
+        m_stuck = false;
+        
+        if (m_ballRB == null)
         {
-            m_sphere.SetActive(true);
-
             m_ballRB = gameObject.AddComponent<Rigidbody>();
             m_ballRB.useGravity = false;
             m_ballRB.collisionDetectionMode = CollisionDetectionMode.Continuous;
-            
-            gameObject.SetActive(false);
-
-            m_destructed = false;
-            m_stuck = false;
         }
 
+        transform.parent = null;
         m_smoking = false;
+
+        m_sphere.SetActive(true);
+        gameObject.SetActive(false);
     }
 
     // Use this for initialization
@@ -150,6 +154,13 @@ public class SlowBall : Destructible
     {   
         if (!m_stuck)
         {
+            /*if (m_ballRB == null) //REALLY SHOULDN'T BE NECCESSARY
+            {
+                m_ballRB = gameObject.AddComponent<Rigidbody>();
+                m_ballRB.useGravity = false;
+                m_ballRB.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            }*/
+
             if (!m_playerDetected)
             {
                 if (m_triggerZone != null)
@@ -175,6 +186,12 @@ public class SlowBall : Destructible
             }
             else
             {
+                if (!m_light.enabled) //Recycled bossballs need this...
+                {
+                    m_ballAudioSource.Play();
+                    m_light.enabled = true;
+                }
+
                 ChasePlayer();
             }
         }         
@@ -182,6 +199,11 @@ public class SlowBall : Destructible
 
     private void ChasePlayer ()
     {
+        if (m_ballRB == null)
+        {
+            return;
+        }
+
         float now = Time.time + GetInstanceID() * 50.0f;
         float h = Mathf.Sin(now) * 0.5f + 0.5f;
         m_light.color = Color.red * h + Color.blue * (1.0f - h);
@@ -218,7 +240,10 @@ public class SlowBall : Destructible
                 if (!m_slowing)
                 {
                     m_slowing = true;
-                    m_playerController.AdjustSpeedMod(-0.05f);
+
+                    m_amountSlowed = Mathf.Min(0.05f, m_playerController.GetSpeedMod());
+
+                    m_playerController.AdjustSpeedMod(-m_amountSlowed);
                 }
                 
                 transform.parent = collision.collider.gameObject.transform;

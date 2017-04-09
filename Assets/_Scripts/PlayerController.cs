@@ -34,7 +34,8 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 m_groundParallel;
 
-    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_sideStep = 0.0f, m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f;
+    private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_sideStep = 0.0f, 
+        m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f, m_iceMod = 1.0f;
 
     private bool m_grounded = true, m_airDashing = false, m_airDashCancel = false, 
         m_stalled = false, m_shielding = false, m_freeFly = false, m_sideStepping = false, 
@@ -118,7 +119,7 @@ public class PlayerController : MonoBehaviour
         }
 
         //m_playerAnimator.SetFloat("Speed", m_speed / m_maxSpeed);
-        m_playerAnimator.SetFloat("Speed", m_playerRB.velocity.magnitude / m_maxSpeed);
+        m_playerAnimator.SetFloat("Speed", m_playerRB.velocity.magnitude / m_maxSpeed * ((Vector3.Dot(m_playerRB.velocity, transform.forward) < 0.0f) ? -1.0f : 1.0f));
         m_playerAnimator.SetFloat("Turn", m_turn);
         //m_playerAnimator.SetFloat("Falling", m_playerRB.velocity.y);
         m_playerAnimator.SetFloat("Falling", Mathf.Lerp(0.0f, transform.InverseTransformVector(m_playerRB.velocity).y, 1.0f - m_flying));
@@ -181,7 +182,7 @@ public class PlayerController : MonoBehaviour
     {
         //Debug.Log("fallen!");
 
-        float startmod = m_speedMod;
+        //float startmod = m_speedMod;
         float stagger = Mathf.Min(0.5f, m_speedMod);
         m_speedMod -= stagger;
 
@@ -200,7 +201,7 @@ public class PlayerController : MonoBehaviour
             yield return null;
         }
 
-        m_speedMod = startmod;
+        //m_speedMod = startmod;
 
         //Debug.Log("fall recovered!");
 
@@ -302,7 +303,7 @@ public class PlayerController : MonoBehaviour
         //Slow player in tight turns
         //float tiltFactor = Mathf.SmoothStep(1.0f, 0.0f, Mathf.Abs(m_turn));
                 
-        m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.y * m_speedMod, 3.5f * Time.deltaTime);
+        m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.y * (m_speedMod * m_iceMod), 3.5f * Time.deltaTime);
 
         if (m_speed < 0.1f && m_speed > -0.1f)
         {
@@ -357,8 +358,8 @@ public class PlayerController : MonoBehaviour
             //Quaternion rot = Quaternion.LookRotation(move.normalized * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up);
             //Quaternion rot = Quaternion.LookRotation(move.normalized, transform.up);
 
-            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
-            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod);
+            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (m_speedMod * m_iceMod) * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
+            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (m_speedMod * m_iceMod));
 
             transform.RotateAround(transform.position, transform.up, m_turn * m_turnSpeed * Time.deltaTime * ((move.y >= -0.1) ? 1.0f : -1.0f));
         }
@@ -395,7 +396,7 @@ public class PlayerController : MonoBehaviour
         {
             //Quaternion rot = Quaternion.LookRotation(move3d, transform.up);
 
-            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 0.5f * m_speedMod * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
+            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 0.5f * (m_speedMod * m_iceMod) * Mathf.SmoothStep(1.0f, 0.25f, Mathf.Abs(m_speed) / m_maxSpeed));
             transform.RotateAround(transform.position, transform.up, m_turn * m_turnSpeed * 0.5f * Time.deltaTime);
         }
     }
@@ -412,7 +413,7 @@ public class PlayerController : MonoBehaviour
 
         Quaternion rot = Quaternion.LookRotation(heading, headingUp);
 
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (m_speedMod * m_iceMod) * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
 
         m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed * 3.0f, 3.0f * Time.deltaTime);
     }
@@ -429,9 +430,9 @@ public class PlayerController : MonoBehaviour
 
         Quaternion rot = Quaternion.LookRotation(heading, headingUp);
 
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * m_speedMod * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * (m_speedMod * m_iceMod) * (1.0f - 0.75f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
 
-        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed * 1.5f * m_speedMod, 3.0f * Time.deltaTime);
+        m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.forward * m_maxSpeed * 1.5f * (m_speedMod * m_iceMod), 3.0f * Time.deltaTime);
     }
 
     public void SideStep(float dir)
@@ -466,7 +467,7 @@ public class PlayerController : MonoBehaviour
 
         do
         {
-            m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.right * m_airDashSpeed * dir * m_speedMod, 10.0f * Time.deltaTime);
+            m_playerRB.velocity = Vector3.Lerp(m_playerRB.velocity, transform.right * m_airDashSpeed * dir * (m_speedMod * m_iceMod), 10.0f * Time.deltaTime);
                         
             yield return null;
         } while (Time.time <= endTime && !m_airDashCancel && !m_freeFly);
@@ -511,7 +512,7 @@ public class PlayerController : MonoBehaviour
 
         do
         {
-            m_playerRB.velocity = move.normalized * Mathf.Lerp(m_playerRB.velocity.magnitude, m_airDashSpeed * m_speedMod, 10.0f * Time.deltaTime);            
+            m_playerRB.velocity = move.normalized * Mathf.Lerp(m_playerRB.velocity.magnitude, m_airDashSpeed * (m_speedMod * m_iceMod), 10.0f * Time.deltaTime);            
             Quaternion rot = Quaternion.LookRotation(m_playerRB.velocity.normalized);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 2.0f);
 
@@ -726,7 +727,7 @@ public class PlayerController : MonoBehaviour
             //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move3d, transform.up).normalized, transform.up);
             //Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(move * ((m_speed >= 0.0f) ? 1.0f : -1.0f), transform.up).normalized, transform.up);
 
-            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 0.5f * m_speedMod * (1.0f - 0.775f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
+            //transform.rotation = Quaternion.RotateTowards(transform.rotation, rot, m_turnSpeed * 0.5f * (m_speedMod * m_iceMod) * (1.0f - 0.775f * Mathf.SmoothStep(0.0f, 1.0f, (m_speed / m_maxSpeed))));
             transform.RotateAround(transform.position, transform.up, m_turn * m_turnSpeed * 0.5f * Time.deltaTime);
         }
     }
@@ -850,12 +851,34 @@ public class PlayerController : MonoBehaviour
             m_speedMod = 2.0f;
         }
 
-        Debug.Log("adjust speed mod delta == " + delta.ToString() + " ; m_speedMod == " + m_speedMod.ToString());
+        //Debug.Log("adjust speed mod delta == " + delta.ToString() + " ; m_speedMod == " + m_speedMod.ToString());
     } 
 
     public float GetSpeedMod ()
     {
         return m_speedMod;
+    }
+
+    public void AdjustIceMod(float delta)
+    {
+        m_iceMod += delta;
+        //m_iceMod = Mathf.Clamp(m_iceMod, 0.0f, 2.0f);
+
+        if (m_iceMod < 0.0f)
+        {
+            m_iceMod = 0.0f;
+        }
+        else if (m_iceMod > 2.0f)
+        {
+            m_iceMod = 2.0f;
+        }
+
+        //Debug.Log("adjust ice mod delta == " + delta.ToString() + " ; m_iceMod == " + m_iceMod.ToString());
+    }
+
+    public float GetIceMod()
+    {
+        return m_iceMod;
     }
 
     public void SetJumpPad (bool state)

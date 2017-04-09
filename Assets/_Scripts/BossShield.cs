@@ -9,6 +9,8 @@ public class BossShield : MonoBehaviour
 
     private PlayerController m_playerController;
 
+    private bool m_playerBooped = false;
+
 	// Use this for initialization
 	void Start ()
     {
@@ -35,6 +37,17 @@ public class BossShield : MonoBehaviour
             Vector3 fudge = Vector3.ProjectOnPlane(dir, transform.up).normalized;
 
             dir = (dir + fudge).normalized;
+
+            if (collision.gameObject.tag == "Player" && !m_playerBooped)
+            {
+                m_playerBooped = true;
+                collision.rigidbody.velocity += dir * m_pushForce;
+                return;
+            }
+            else if (collision.gameObject.tag == "Player" && m_playerBooped)
+            {
+                return;
+            }
             
             collision.rigidbody.velocity += dir * m_pushForce;            
         }
@@ -53,5 +66,10 @@ public class BossShield : MonoBehaviour
 
             collision.rigidbody.velocity += dir * m_pushForce;
         }
+    }
+
+    private void OnDisable()
+    {
+        m_playerBooped = false;
     }
 }
