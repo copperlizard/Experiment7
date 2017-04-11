@@ -17,16 +17,26 @@ public class FirstBossController : MonoBehaviour
 
     private ObjectPool m_cannonAmmo, m_slowBalls;
 
+    private AudioSource m_audioSource;
+
     private Transform[] m_slowBallSpawnPoints;
 
     private Vector3 m_tarPos;
+
+    private int m_hits = 0;
 
     private bool m_leftArmLocked = false, m_rightArmLocked = false, m_firing = false, m_leftArmFiring = false, 
         m_rightArmFiring = false, m_weakPointHit = false, m_shielding = false;
 
     // Use this for initialization
     void Start ()
-    {
+    {        
+        m_audioSource = GetComponent<AudioSource>();
+        if (m_audioSource == null)
+        {
+            Debug.Log("m_audioSource not found!");
+        }
+
 		if (m_player == null)
         {
             m_player = GameObject.FindGameObjectWithTag("Player");
@@ -149,7 +159,7 @@ public class FirstBossController : MonoBehaviour
             yield return null;
         } while (m_shield.transform.localScale.x < 1.0f);
 
-        yield return new WaitForSeconds(10.0f);
+        yield return new WaitForSeconds(15.0f);
 
         m_shield.transform.localScale = Vector3.zero;
         m_shield.SetActive(false);
@@ -158,6 +168,24 @@ public class FirstBossController : MonoBehaviour
         m_weakPointHit = false;
 
         yield return null;
+    }
+
+    void BossDie ()
+    {
+        StartCoroutine(BossDieing());
+    }
+
+    IEnumerator BossDieing ()
+    {
+        float startTime = Time.time;
+        do
+        {
+            transform.position = Vector3.Lerp(transform.position, transform.position - transform.up, 10.0f * Time.deltaTime);
+            transform.Rotate(0.0f, 20.0f * Time.deltaTime, 0.0f);
+            yield return null;
+        } while (Time.time < startTime + 10.0f);
+
+        Destroy(gameObject);
     }
 
     void FacePlayer ()
@@ -203,13 +231,15 @@ public class FirstBossController : MonoBehaviour
         Vector3 tarPos;
         RaycastHit hit;
 
-        float startTime = Time.time;
+        float startTime = Time.time, beepTime = 0.0f, beepPeriod = 0.75f;
 
         do
         {
-            if (Physics.Raycast(arm.transform.position, arm.transform.forward, out hit, 1000.0f, ~LayerMask.GetMask("Player", "Boss")))
+            if (Physics.Raycast(arm.transform.position, arm.transform.forward, out hit, 1000.0f, ~LayerMask.GetMask("Player", "Boss", "Projectile"), QueryTriggerInteraction.Ignore))
             {
                 tarPos = hit.point;
+
+                //Debug.Log("hit " + hit.collider.gameObject.name);
             }
             else
             {
@@ -246,34 +276,42 @@ public class FirstBossController : MonoBehaviour
                 m_rightTarget.transform.position = tarPos;
                 m_rightTarget.transform.up = hit.normal;
             }
+            
+            if (Time.time >= beepTime + beepPeriod * (1.0f - ((Time.time - startTime) / 3.0f)) && !m_audioSource.isPlaying)
+            {
+                beepTime = Time.time;
 
+                m_audioSource.PlayOneShot(m_audioSource.clip);
+            }
+            
             yield return null;
-        } while (startTime + 3.0f > Time.time);
-        
-        if (arm == m_leftArm)
+        } while (startTime + 3.0f > Time.time && !m_shielding);
+
+        if (!m_shielding)
         {
-            m_leftArmLocked = true;
+            if (arm == m_leftArm)
+            {
+                m_leftArmLocked = true;
+            }
+            else if (arm == m_rightArm)
+            {
+                m_rightArmLocked = true;
+            }
+
+            //Fire
+            GameObject ball = m_cannonAmmo.GetObject();
+            ball.transform.position = arm.transform.position + arm.transform.forward * 10.0f;
+
+            ball.SetActive(true);
+
+            Rigidbody ballRB = ball.GetComponent<Rigidbody>();
+            ballRB.velocity = arm.transform.forward * 200.0f;
         }
-        else if (arm == m_rightArm)
-        {
-            m_rightArmLocked = true;
-        }
-
-        //Fire
-        GameObject ball = m_cannonAmmo.GetObject();
-        ball.transform.position = arm.transform.position + arm.transform.forward * 10.0f;
-
-        ball.SetActive(true);
-
-        Rigidbody ballRB = ball.GetComponent<Rigidbody>();
-        ballRB.velocity = arm.transform.forward * 200.0f;
 
         m_firing = false;
 
         //Wait
-        //yield return new WaitForSeconds(3.0f);
         startTime = Time.time;
-
         do
         {
             if (arm == m_leftArm)
@@ -308,7 +346,7 @@ public class FirstBossController : MonoBehaviour
             }
 
             yield return null;
-        } while (startTime + 1.0f > Time.time);
+        } while (startTime + 1.0f > Time.time && !m_shielding);
 
         //Done
         if (arm == m_leftArm)
@@ -416,13 +454,26 @@ public class FirstBossController : MonoBehaviour
     public void HitWeakPoint (Vector3 normal)
     {
         //ADD CHECK FOR IS PLAYER KICKING!
+        if (m_playerController.PlayerIsKicking() && !m_weakPointHit)
+        {
+            Debug.Log("hit weakpoint!");
+            m_weakPointHit = true;
 
-        Debug.Log("hit weakpoint!");
-        m_weakPointHit = true;
+            m_hits++;
 
-        m_playerController.SetAirDashes(m_playerController.GetAirDashes() + 1.5f);
-        m_playerController.Bounce(normal, 30.0f);
+            m_playerController.SetAirDashes(m_playerController.GetAirDashes() + 1.5f);
+            m_playerController.Bounce(normal, 30.0f);
 
-        BossShield();
+
+            if (m_hits < 3)
+            {
+                BossShield();
+            }
+            else
+            {
+                BossShield();
+                BossDie();
+            }
+        }        
     }
 }

@@ -811,6 +811,11 @@ public class PlayerController : MonoBehaviour
         return m_shielding;
     }
 
+    public bool PlayerIsKicking ()
+    {
+        return m_kicking;
+    }
+
     public float GetShieldEnergy ()
     {
         return m_shieldEnergy;
