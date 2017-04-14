@@ -35,7 +35,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 m_groundParallel;
 
     private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_sideStep = 0.0f, 
-        m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f, m_iceMod = 1.0f;
+        m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f, 
+        m_iceMod = 1.0f, m_staggerMod = 1.0f;
 
     private bool m_grounded = true, m_airDashing = false, m_airDashCancel = false, 
         m_stalled = false, m_shielding = false, m_freeFly = false, m_sideStepping = false, 
@@ -183,8 +184,8 @@ public class PlayerController : MonoBehaviour
         //Debug.Log("fallen!");
 
         //float startmod = m_speedMod;
-        float stagger = Mathf.Min(0.5f, m_speedMod);
-        m_speedMod -= stagger;
+        float stagger = Mathf.Min(0.5f, m_staggerMod);
+        m_staggerMod -= stagger;
 
         /*
         if (m_speedMod < 0.0f)
@@ -196,12 +197,13 @@ public class PlayerController : MonoBehaviour
         while (stagger > 0.0f)
         {
             float delta = 0.25f * Time.deltaTime;
-            m_speedMod += delta;
+            m_staggerMod += delta;
             stagger -= delta;
             yield return null;
         }
 
         //m_speedMod = startmod;
+        m_staggerMod = 1.0f;
 
         //Debug.Log("fall recovered!");
 
@@ -281,7 +283,7 @@ public class PlayerController : MonoBehaviour
 
     public void Move (Vector2 move)
     {
-        if (/*!m_jumping &&*/ !m_freeFly && !m_sideStepping && !m_kicking && !m_groundCheckSuspended)
+        if (!m_freeFly && !m_sideStepping && !m_kicking && !m_groundCheckSuspended)
         {
             GroundCheck();
         }
@@ -299,11 +301,8 @@ public class PlayerController : MonoBehaviour
         //Vector3 camDir = transform.InverseTransformDirection(Vector3.ProjectOnPlane(m_camera.transform.forward, transform.up).normalized);        
         //Quaternion camRot = Quaternion.LookRotation(camDir);       
         //move3d = camRot * move3d;
-
-        //Slow player in tight turns
-        //float tiltFactor = Mathf.SmoothStep(1.0f, 0.0f, Mathf.Abs(m_turn));
-                
-        m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.y * (m_speedMod * m_iceMod), 3.5f * Time.deltaTime);
+        
+        m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.y * (m_speedMod * m_iceMod * m_staggerMod), 3.5f * Time.deltaTime);
 
         if (m_speed < 0.1f && m_speed > -0.1f)
         {
@@ -893,21 +892,19 @@ public class PlayerController : MonoBehaviour
 
     public void Bounce (Vector3 n, float bounceForce)
     {
-        //−(2(n · v) n − v) = a
         m_bounce = true;
         Debug.Log("bounce!");
+        StartCoroutine(SuspendGroundCheck(1.0f));
+        m_grounded = false;
 
+        //−(2(n · v) n − v) = a
         Vector3 v = m_playerRB.velocity;
-
         Vector3 a = -(2 * (Vector3.Dot(n, v) * n - v));
 
         m_playerRB.velocity = a.normalized * m_playerRB.velocity.magnitude + n * bounceForce;
-
-        m_grounded = false;
-        StartCoroutine(SuspendGroundCheck(1.0f));
-
-        //Debug.DrawLine(transform.position, transform.position + v, Color.gray);
-        //Debug.DrawLine(transform.position, transform.position + m_playerRB.velocity, Color.red);
+        
+        Debug.DrawLine(transform.position, transform.position + v, Color.blue);
+        Debug.DrawLine(transform.position, transform.position + m_playerRB.velocity, Color.red);
         //Time.timeScale = 0.0f;
     }
 }

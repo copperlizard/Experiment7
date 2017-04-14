@@ -6,7 +6,7 @@ public class FirstBossController : MonoBehaviour
 {
     [SerializeField]
     private GameObject m_player, m_leftArm, m_rightArm, m_leftTarget, 
-        m_rightTarget, m_shield, m_slowBallSpawnPointsParent;
+        m_rightTarget, m_shield, m_slowBallSpawnPointsParent, m_goal;
 
     [SerializeField]
     private float m_maxTurnSpeed = 15.0f, m_maxAimSpeed = 15.0f;
@@ -18,6 +18,9 @@ public class FirstBossController : MonoBehaviour
     private ObjectPool m_cannonAmmo, m_slowBalls;
 
     private AudioSource m_audioSource;
+
+    [SerializeField]
+    private AudioClip m_hitWeakpoint, m_dead;
 
     private Transform[] m_slowBallSpawnPoints;
 
@@ -37,7 +40,17 @@ public class FirstBossController : MonoBehaviour
             Debug.Log("m_audioSource not found!");
         }
 
-		if (m_player == null)
+        if (m_hitWeakpoint == null)
+        {
+            Debug.Log("m_hitWeakpoint not assigned!");
+        }
+
+        if (m_dead == null)
+        {
+            Debug.Log("m_dead not assigned!");
+        }
+
+        if (m_player == null)
         {
             m_player = GameObject.FindGameObjectWithTag("Player");
 
@@ -98,6 +111,11 @@ public class FirstBossController : MonoBehaviour
         if (m_rightTarget == null)
         {
             Debug.Log("m_rightTarget not assigned!");
+        }
+
+        if (m_goal == null)
+        {
+            Debug.Log("m_goal not assigned!");
         }
 
         m_cannonAmmo = GetComponentsInChildren<ObjectPool>()[0];
@@ -177,11 +195,22 @@ public class FirstBossController : MonoBehaviour
 
     IEnumerator BossDieing ()
     {
+        Vector3 goalTar = m_goal.transform.position;
+        m_goal.transform.position = m_goal.transform.position - Vector3.up * 100.0f;
+        m_goal.SetActive(true);
+
+        yield return new WaitForSeconds(0.1f);
+
+        m_audioSource.PlayOneShot(m_dead);
+
         float startTime = Time.time;
         do
         {
             transform.position = Vector3.Lerp(transform.position, transform.position - transform.up, 10.0f * Time.deltaTime);
             transform.Rotate(0.0f, 20.0f * Time.deltaTime, 0.0f);
+
+            m_goal.transform.position = Vector3.Lerp(m_goal.transform.position, goalTar, 0.75f * Time.deltaTime);
+
             yield return null;
         } while (Time.time < startTime + 10.0f);
 
@@ -235,7 +264,7 @@ public class FirstBossController : MonoBehaviour
 
         do
         {
-            if (Physics.Raycast(arm.transform.position, arm.transform.forward, out hit, 1000.0f, ~LayerMask.GetMask("Player", "Boss", "Projectile"), QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(arm.transform.position, arm.transform.forward, out hit, 1000.0f, ~LayerMask.GetMask("Player", "PlayerBody", "Boss", "Projectile"), QueryTriggerInteraction.Ignore))
             {
                 tarPos = hit.point;
 
@@ -459,12 +488,13 @@ public class FirstBossController : MonoBehaviour
             Debug.Log("hit weakpoint!");
             m_weakPointHit = true;
 
+            m_audioSource.PlayOneShot(m_hitWeakpoint);
+
             m_hits++;
 
             m_playerController.SetAirDashes(m_playerController.GetAirDashes() + 1.5f);
-            m_playerController.Bounce(normal, 30.0f);
-
-
+            m_playerController.Bounce(normal, 0.0f);
+            
             if (m_hits < 3)
             {
                 BossShield();

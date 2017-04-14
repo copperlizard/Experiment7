@@ -37,11 +37,14 @@ public class SlowBall : Destructible
 
         m_destructed = true;
 
-        if (m_stuck && m_slowing)
+        /*if (m_slowing)
         {
             m_slowing = false;
             m_playerController.AdjustSpeedMod(m_amountSlowed);
-        }        
+        }*/
+
+        m_playerController.AdjustSpeedMod(m_amountSlowed);
+        m_amountSlowed = 0.0f;
 
         m_sphere.SetActive(false);
 
@@ -64,9 +67,6 @@ public class SlowBall : Destructible
             yield break;
         }    
         
-        m_destructed = false;
-        m_stuck = false;
-        
         if (m_ballRB == null)
         {
             m_ballRB = gameObject.AddComponent<Rigidbody>();
@@ -75,7 +75,13 @@ public class SlowBall : Destructible
         }
 
         transform.parent = null;
+
         m_smoking = false;
+        m_destructed = false;
+        m_stuck = false;
+        m_slowing = false;
+
+        m_playerDetected = true;
 
         m_sphere.SetActive(true);
         gameObject.SetActive(false);
@@ -223,11 +229,19 @@ public class SlowBall : Destructible
         }
     }
 
+    /*private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.collider.tag == "Shield")
+        {
+            Destruct();
+        }
+    }*/
+
     private void OnCollisionStay(Collision collision)
     {
         //Debug.Log(gameObject.name + " collided with " + collision.collider.gameObject.name);
 
-        if (collision.collider.tag == "PlayerBody")
+        if (collision.collider.tag == "PlayerBody" && !m_playerController.PlayerIsShielded())
         {
             //Debug.Log("stuck to " + collision.collider.gameObject.name);
 
