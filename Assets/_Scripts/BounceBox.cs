@@ -5,12 +5,17 @@ using UnityEngine;
 public class BounceBox : MonoBehaviour
 {
     [SerializeField]
+    private GameObject m_bounceFX;
+
+    [SerializeField]
     private float m_bounceForce;
 
     [SerializeField]
     private Vector3 m_bounceAxis;
 
     private PlayerController m_playerController;
+
+    private bool m_playerBounced = false;
 
 	// Use this for initialization
 	void Start ()
@@ -19,6 +24,11 @@ public class BounceBox : MonoBehaviour
         if (m_playerController == null)
         {
             Debug.Log("m_playerController not found!");
+        }
+
+        if (m_bounceFX == null)
+        {
+            Debug.Log("m_bounceFX not assigned!");
         }
 	}
 	
@@ -34,17 +44,43 @@ public class BounceBox : MonoBehaviour
         {
             collision.rigidbody.velocity += collision.contacts[0].normal * m_bounceForce;
 
-            //StartCoroutine(AnimateBounce());
+            StartCoroutine(AnimateBounce());
         }
-        else if (collision.gameObject.tag == "Player")
+        else if (collision.gameObject.tag == "Player" && !m_playerBounced)
         {
             m_playerController.Bounce(collision.contacts[0].normal, m_bounceForce);
+            m_playerBounced = true;
+
+            StartCoroutine(AnimateBounce());
+        }
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if (collision.gameObject.tag == "Player" && m_playerBounced)
+        {
+            m_playerBounced = false;
         }
     }
 
     private IEnumerator AnimateBounce ()
     {
+        if (m_bounceFX != null)
+        {
+            if (m_bounceFX.activeInHierarchy)
+            {
+                m_bounceFX.SetActive(false); // reset FX
+            }
 
+            m_bounceFX.SetActive(true);
+            
+            yield return new WaitForSeconds(1.0f);
+
+            if (m_bounceFX.activeInHierarchy) // avoid confusion with multiple collsions
+            {
+                m_bounceFX.SetActive(false); // reset FX
+            }
+        }
 
         yield return null;
     }
