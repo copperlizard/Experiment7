@@ -128,6 +128,8 @@
     <Compile Include="Assets\_Scripts\CameraController.cs" />
     <Compile Include="Assets\_Scripts\CameraInput.cs" />
     <Compile Include="Assets\_Scripts\CameraRenderDepth.cs" />
+    <Compile Include="Assets\_Scripts\CameraVortexManager.cs" />
+    <Compile Include="Assets\_Scripts\ConfusionHazard.cs" />
     <Compile Include="Assets\_Scripts\DataManager.cs" />
     <Compile Include="Assets\_Scripts\Destructible.cs" />
     <Compile Include="Assets\_Scripts\FirstBossController.cs" />
