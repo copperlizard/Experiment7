@@ -13,6 +13,8 @@ public class PlayerInput : MonoBehaviour
     private PlayerController m_playerController;
     private Vector2 m_move;
 
+    private string m_controllerType = "";
+
     private float m_jumpCharge = 0.0f;
 
     private bool m_jumpCharging = false, m_jump = false, m_pauseJumpLock = false, m_pauseToggle = false, m_confirmingBack = false;
@@ -33,12 +35,29 @@ public class PlayerInput : MonoBehaviour
         {
             Debug.Log("m_gameManager not found!");
         }
+
+        m_controllerType = Input.GetJoystickNames()[0];
+        if (m_controllerType == "")
+        {
+            Debug.Log("playstation layout!");
+        }
+        else
+        {
+            Debug.Log("xbox layout!");
+        }
     }
 	
 	// Update is called once per frame
 	void Update ()
-    {   
-        GetInput();
+    {
+        if (m_controllerType != "")
+        {
+            GetXBoxInput();
+        }   
+        else
+        {
+            GetPS4Input();
+        }        
     }
 
     private void FixedUpdate()
@@ -48,33 +67,33 @@ public class PlayerInput : MonoBehaviour
         m_playerController.SetJumpCharge(m_jumpCharge);
     }
 
-    private void GetInput ()
+    private void GetPS4Input()
     {
         if (m_gameManager.IsPaused()) //keep player from jumping after pause screen
-        {           
+        {
             m_pauseJumpLock = true;
             //Debug.Log("jump locked!");            
         }
         else if (m_pauseJumpLock)
         {
-            if (Input.GetButtonUp("Jump"))
+            if (Input.GetButtonUp("Button1"))
             {
                 m_pauseJumpLock = false;
                 //Debug.Log("jump released!");
             }
         }
 
-        if (Input.GetButtonDown("Back") && !m_confirmingBack)
+        if (Input.GetButtonDown("Button8") && !m_confirmingBack)
         {
             StartCoroutine(ConfirmBack());
         }
 
-        if (Input.GetButtonDown("Pause") && !m_pauseToggle)
-        {            
+        if (Input.GetButtonDown("Button9") && !m_pauseToggle)
+        {
             m_gameManager.PauseGame();
             m_pauseToggle = true;
         }
-        else if (m_pauseToggle && !Input.GetButton("Pause"))
+        else if (m_pauseToggle && !Input.GetButton("Button9"))
         {
             m_pauseToggle = false;
         }
@@ -87,36 +106,110 @@ public class PlayerInput : MonoBehaviour
         {
             m_playerController.SideStep(sideStep);
         }
-        else if (Input.GetButtonDown("Kick"))
+        else if (Input.GetButtonDown("Button2"))
         {
             m_playerController.Kick();
         }
-        else if (Input.GetButtonDown("Jump") && !m_jumpCharging && m_playerController.PlayerIsGrounded() && !m_pauseJumpLock && !Input.GetButton("Shield"))
+        else if (Input.GetButtonDown("Button1") && !m_jumpCharging && m_playerController.PlayerIsGrounded() && !m_pauseJumpLock && !Input.GetButton("Button0"))
         {
             StartCoroutine(JumpCharge());
             m_jump = true;
         }
-        else if (Input.GetButtonDown("Jump") && !m_playerController.PlayerIsGrounded())
+        else if (Input.GetButtonDown("Button1") && !m_playerController.PlayerIsGrounded())
         {
             //Debug.Log("dash!");
             m_jumpCharge = 0.0f; //maybe uneccessary, trying to fix bug where charge gets "stuck"
             m_playerController.AirDash(m_move);
         }
-        else if (Input.GetButtonUp("Jump") && m_jump && m_playerController.PlayerIsGrounded())
+        else if (Input.GetButtonUp("Button1") && m_jump && m_playerController.PlayerIsGrounded())
         {
             //Debug.Log("jump!");
             m_playerController.Jump();
             m_jumpCharge = 0.0f;
         }
-        else if (Input.GetButtonUp("Jump") && m_jump && !m_playerController.PlayerIsGrounded())
+        else if (Input.GetButtonUp("Button1") && m_jump && !m_playerController.PlayerIsGrounded())
         {
             m_jumpCharge = 0.0f;
         }
-        else if (Input.GetButtonDown("Shield") && !m_gameManager.IsPaused())
+        else if (!m_playerController.PlayerIsShielded() && Input.GetButton("Button0") && !m_gameManager.IsPaused())
         {
             m_playerController.Shield(true);
         }
-        else if (Input.GetButtonUp("Shield") && !m_gameManager.IsPaused())
+        else if (m_playerController.PlayerIsShielded() && !Input.GetButton("Button0") && !m_gameManager.IsPaused())
+        {
+            m_playerController.Shield(false);
+        }
+    }
+
+    private void GetXBoxInput ()
+    {
+        if (m_gameManager.IsPaused()) //keep player from jumping after pause screen
+        {           
+            m_pauseJumpLock = true;
+            //Debug.Log("jump locked!");            
+        }
+        else if (m_pauseJumpLock)
+        {
+            if (Input.GetButtonUp("Button0"))
+            {
+                m_pauseJumpLock = false;
+                //Debug.Log("jump released!");
+            }
+        }
+
+        if (Input.GetButtonDown("Button6") && !m_confirmingBack)
+        {
+            StartCoroutine(ConfirmBack());
+        }
+
+        if (Input.GetButtonDown("Button7") && !m_pauseToggle)
+        {            
+            m_gameManager.PauseGame();
+            m_pauseToggle = true;
+        }
+        else if (m_pauseToggle && !Input.GetButton("Button7"))
+        {
+            m_pauseToggle = false;
+        }
+
+        m_move.x = Input.GetAxis("Horizontal");
+        m_move.y = Input.GetAxis("Vertical");
+
+        float sideStep = Input.GetAxis("SideStep");
+        if (sideStep > 0.1f || sideStep < -0.1f)
+        {
+            m_playerController.SideStep(sideStep);
+        }
+        else if (Input.GetButtonDown("Button1"))
+        {
+            m_playerController.Kick();
+        }
+        else if (Input.GetButtonDown("Button0") && !m_jumpCharging && m_playerController.PlayerIsGrounded() && !m_pauseJumpLock && !Input.GetButton("Button2"))
+        {
+            StartCoroutine(JumpCharge());
+            m_jump = true;
+        }
+        else if (Input.GetButtonDown("Button0") && !m_playerController.PlayerIsGrounded())
+        {
+            //Debug.Log("dash!");
+            m_jumpCharge = 0.0f; //maybe uneccessary, trying to fix bug where charge gets "stuck"
+            m_playerController.AirDash(m_move);
+        }
+        else if (Input.GetButtonUp("Button0") && m_jump && m_playerController.PlayerIsGrounded())
+        {
+            //Debug.Log("jump!");
+            m_playerController.Jump();
+            m_jumpCharge = 0.0f;
+        }
+        else if (Input.GetButtonUp("Button0") && m_jump && !m_playerController.PlayerIsGrounded())
+        {
+            m_jumpCharge = 0.0f;
+        }
+        else if (!m_playerController.PlayerIsShielded() && Input.GetButton("Button2") && !m_gameManager.IsPaused())
+        {
+            m_playerController.Shield(true);
+        }
+        else if (m_playerController.PlayerIsShielded() && !Input.GetButton("Button2") && !m_gameManager.IsPaused())
         {
             m_playerController.Shield(false);
         }
@@ -130,7 +223,7 @@ public class PlayerInput : MonoBehaviour
 
         do
         {
-            if (!Input.GetButton("Back"))
+            if (!Input.GetButton("Button6"))
             {
                 confirmed = false;
             }
@@ -155,7 +248,7 @@ public class PlayerInput : MonoBehaviour
         {
             m_jumpCharge = Mathf.SmoothStep(m_jumpCharge, 1.0f, m_jumpChargeRate * Time.deltaTime);
             yield return null;
-        } while (Input.GetButton("Jump"));
+        } while ((m_controllerType != "") ? Input.GetButton("Button0") : Input.GetButton("Button1"));
 
         m_jumpCharging = false;
 
