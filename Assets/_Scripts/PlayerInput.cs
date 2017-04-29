@@ -36,27 +36,39 @@ public class PlayerInput : MonoBehaviour
             Debug.Log("m_gameManager not found!");
         }
 
-        m_controllerType = Input.GetJoystickNames()[0];
-        if (m_controllerType == "")
+        if (Input.GetJoystickNames().Length > 0)
         {
-            Debug.Log("playstation layout!");
+            m_controllerType = Input.GetJoystickNames()[0];
+
+            Debug.Log(m_controllerType);
+
+            if (m_controllerType == "Wireless Controller" || m_controllerType == "")
+            {
+                Debug.Log("playstation layout!");
+            }
+            else
+            {
+                Debug.Log("xbox layout!");
+            }
         }
         else
         {
-            Debug.Log("xbox layout!");
+            m_controllerType = "XBox";
         }
+
+        
     }
 	
 	// Update is called once per frame
 	void Update ()
     {
-        if (m_controllerType != "")
+        if (m_controllerType == "Wireless Controller" || m_controllerType == "")
         {
-            GetXBoxInput();
+            GetPS4Input();
         }   
         else
         {
-            GetPS4Input();
+            GetXBoxInput(); 
         }        
     }
 
@@ -223,7 +235,7 @@ public class PlayerInput : MonoBehaviour
 
         do
         {
-            if (!Input.GetButton("Button6"))
+            if ((m_controllerType == "Wireless Controller" || m_controllerType == "") ? !Input.GetButton("Button8") : !Input.GetButton("Button6"))
             {
                 confirmed = false;
             }
@@ -248,7 +260,7 @@ public class PlayerInput : MonoBehaviour
         {
             m_jumpCharge = Mathf.SmoothStep(m_jumpCharge, 1.0f, m_jumpChargeRate * Time.deltaTime);
             yield return null;
-        } while ((m_controllerType != "") ? Input.GetButton("Button0") : Input.GetButton("Button1"));
+        } while ((m_controllerType == "Wireless Controller" || m_controllerType == "") ? Input.GetButton("Button1") : Input.GetButton("Button0"));
 
         m_jumpCharging = false;
 

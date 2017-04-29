@@ -42,13 +42,17 @@ public class CameraController : MonoBehaviour
             {
                 Debug.Log("m_player not found!");
             }
+            else
+            {
+                m_playerRB = m_player.GetComponent<Rigidbody>();
+            }
         }
         else
         {
             m_playerRB = m_player.GetComponent<Rigidbody>();
         }
 
-        m_motionBlur = GetComponent<MotionBlur>();
+        m_motionBlur = GetComponentInChildren<MotionBlur>();
 	}
 	
 	// Update is called once per frame

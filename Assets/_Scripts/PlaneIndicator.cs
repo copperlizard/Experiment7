@@ -19,6 +19,6 @@ public class PlaneIndicator : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
     {
-        transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+        transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);        
 	}
 }

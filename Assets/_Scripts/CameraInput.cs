@@ -20,27 +20,34 @@ public class CameraInput : MonoBehaviour
             Debug.Log("m_cameraController not found!");
         }
 
-        m_controllerType = Input.GetJoystickNames()[0];
-        if (m_controllerType == "")
+        if (Input.GetJoystickNames().Length > 0)
         {
-            Debug.Log("(camera) playstation layout!");
+            m_controllerType = Input.GetJoystickNames()[0];
+            if (m_controllerType == "Wireless Controller" || m_controllerType == "")
+            {
+                Debug.Log("(camera) playstation layout!");
+            }
+            else
+            {
+                Debug.Log("(camera) xbox layout!");
+            }
         }
         else
         {
-            Debug.Log("(camera) xbox layout!");
+            m_controllerType = "XBox";
         }
     }
 	
 	// Update is called once per frame
 	void Update ()
     {
-        if (m_controllerType != "")
+        if (m_controllerType == "Wireless Controller" || m_controllerType == "")
         {
-            GetXBoxInput();
+            GetPS4Input();
         }
         else
         {
-            GetPS4Input();
+            GetXBoxInput(); 
         }
 
         m_cameraController.PanTilt(m_move);
