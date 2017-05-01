@@ -149,6 +149,7 @@
     <Compile Include="Assets\_Scripts\MenuPanelInput.cs" />
     <Compile Include="Assets\_Scripts\ObjectPool.cs" />
     <Compile Include="Assets\_Scripts\PlaneIndicator.cs" />
+    <Compile Include="Assets\_Scripts\PlaneIndicatorStaticElement.cs" />
     <Compile Include="Assets\_Scripts\PlayerController.cs" />
     <Compile Include="Assets\_Scripts\PlayerInput.cs" />
     <Compile Include="Assets\_Scripts\PlayerShield.cs" />

@@ -27,13 +27,16 @@ public class CameraController : MonoBehaviour
     private float m_cameraClearanceRadius = 0.2f, m_cameraMinFollowDist = 1.0f, m_cameraMaxFollowDist = 10.0f;
     //private float m_intersectionSepDist = 0.1f;
 
-    private float m_pan = 0.0f, m_tilt = 0.0f;
+    private float m_pan = 0.0f, m_tilt = 0.0f, m_startTilt = 0.0f, m_startPan = 0.0f;
 
     // Use this for initialization
     void Start ()
     {
         m_tiltMin = -m_tiltMin;
         m_panMin = -m_panMin;
+
+        m_startTilt = transform.rotation.eulerAngles.x;
+        m_startPan = transform.rotation.eulerAngles.y;        
 
 		if (m_player == null)
         {
@@ -120,5 +123,11 @@ public class CameraController : MonoBehaviour
 
         m_pan = Mathf.Lerp(m_pan, pan, 3.0f * Time.deltaTime);
         m_tilt = Mathf.Lerp(m_tilt, tilt, 3.0f * Time.deltaTime);
+    }
+    
+    public Quaternion GetPanTiltQuaternion ()
+    {
+        //Debug.Log("tilt == " + (m_tilt + m_startTilt).ToString());
+        return Quaternion.Euler(m_tilt + m_startTilt, m_pan - m_startPan, 0.0f);
     }    
 }
