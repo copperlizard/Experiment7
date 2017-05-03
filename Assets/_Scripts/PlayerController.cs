@@ -8,7 +8,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_airDashSpeed = 30.0f, 
         m_dashDuration = 1.0f, m_kickDuration = 3.0f, m_sideStepDuration = 0.5f, m_groundCheckDist = 0.25f, 
-        m_minFlightHeight = 1.0f, m_flightTransitionRate = 20.0f, m_runCycleLegOffset = 0.0f;
+        m_minFlightHeight = 1.0f, m_flightTransitionRate = 20.0f, m_runCycleLegOffset = 0.0f, m_shieldBreakRecoverTime = 0.25f;
 
     [SerializeField]
     private GameObject m_playerShield, m_playerKickShield;
@@ -38,9 +38,9 @@ public class PlayerController : MonoBehaviour
         m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f, 
         m_iceMod = 1.0f, m_staggerMod = 1.0f;
 
-    private bool m_grounded = true, m_airDashing = false, m_airDashCancel = false, 
-        m_stalled = false, m_shielding = false, m_freeFly = false, m_sideStepping = false, 
-        m_kicking = false, m_groundCheckSuspended = false, m_jumpPad = false, m_bounce = false;
+    private bool m_grounded = true, m_airDashing = false, m_airDashCancel = false, m_stalled = false,
+        m_shielding = false, m_freeFly = false, m_sideStepping = false, m_kicking = false, 
+        m_groundCheckSuspended = false, m_jumpPad = false, m_bounce = false, m_shieldBreak = false;
 
 	// Use this for initialization
 	void Start ()
@@ -114,7 +114,7 @@ public class PlayerController : MonoBehaviour
     {        
         m_airDashes = Mathf.Min(3.0f, m_airDashes + 0.1f * Time.deltaTime);
 
-        if (!m_shielding)
+        if (!m_shielding && !m_shieldBreak)
         {
             m_shieldEnergy = Mathf.Min(1.0f, m_shieldEnergy + 0.15f * Time.deltaTime);
         }
@@ -680,7 +680,7 @@ public class PlayerController : MonoBehaviour
 
     public void Shield (bool state)
     {
-        if (m_shieldEnergy <= 0.0f || m_kicking)
+        if (m_shieldEnergy <= 0.05f || m_kicking)
         {
             m_shielding = false;
             return;
@@ -756,14 +756,26 @@ public class PlayerController : MonoBehaviour
             yield return null;
         } while (m_shielding && m_shieldEnergy > 0.01f && !m_kicking);
 
-        m_shielding = false;
-        
+        if (m_shieldEnergy <= 0.01f)
+        {
+            m_shieldEnergy = 0.0f;
+            StartCoroutine(ShieldRecover());
+        }
+
+        m_shielding = false;        
 
         //DeVisualize shield
         m_playerShield.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
         m_playerShield.SetActive(false);
 
         yield return null;
+    }
+
+    private IEnumerator ShieldRecover ()
+    {
+        m_shieldBreak = true;
+        yield return new WaitForSeconds(m_shieldBreakRecoverTime);
+        m_shieldBreak = false;
     }
 
     private void OnCollisionEnter (Collision collision)
@@ -893,7 +905,7 @@ public class PlayerController : MonoBehaviour
     public void Bounce (Vector3 n, float bounceForce)
     {
         m_bounce = true;
-        Debug.Log("bounce!");
+        //Debug.Log("bounce!");
         StartCoroutine(SuspendGroundCheck(1.0f));
         m_grounded = false;
 
