@@ -8,7 +8,7 @@ public class BounceBox : MonoBehaviour
     private GameObject m_bounceFX;
 
     [SerializeField]
-    private float m_bounceForce;
+    private float m_bounceForce, m_bounceCooldown = 0.25f;
 
     [SerializeField]
     private Vector3 m_bounceAxis;
@@ -59,8 +59,14 @@ public class BounceBox : MonoBehaviour
     {
         if (collision.gameObject.tag == "Player" && m_playerBounced)
         {
-            m_playerBounced = false;
+            StartCoroutine(BounceCooldown());
         }
+    }
+
+    private IEnumerator BounceCooldown ()
+    {
+        yield return new WaitForSeconds(m_bounceCooldown);
+        m_playerBounced = false;
     }
 
     private IEnumerator AnimateBounce ()

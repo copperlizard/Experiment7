@@ -36,7 +36,7 @@ public class PlayerController : MonoBehaviour
 
     private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_sideStep = 0.0f, 
         m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f, 
-        m_iceMod = 1.0f, m_staggerMod = 1.0f;
+        m_iceMod = 1.0f, m_staggerMod = 1.0f, m_tilt = 0.0f, m_tiltLerpRate = 0.0f;
 
     private bool m_grounded = true, m_airDashing = false, m_airDashCancel = false, m_stalled = false,
         m_shielding = false, m_freeFly = false, m_sideStepping = false, m_kicking = false, 
@@ -107,6 +107,8 @@ public class PlayerController : MonoBehaviour
         {
             Debug.Log("m_dashParticles not found!");
         }
+
+        m_tiltLerpRate = GetTiltLerpRate();
     }
 	
 	// Update is called once per frame
@@ -269,7 +271,10 @@ public class PlayerController : MonoBehaviour
         //Debug.DrawRay(m_groundAt.point, alignedForward, Color.blue);
         
         Quaternion alignedRot = Quaternion.LookRotation(m_groundParallel, m_groundAt.normal);
-        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 10.0f * Time.deltaTime);
+
+        float dif = Quaternion.Angle(transform.rotation, alignedRot);
+
+        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, (1.0f + (dif * 0.25f)) * Time.deltaTime);
 
         Vector3 toGround = m_groundAt.point - transform.position;       
         
@@ -290,17 +295,12 @@ public class PlayerController : MonoBehaviour
 
         move = move.normalized * Mathf.Min(1.0f, move.magnitude); // Make keyboard input look like joystick input (joystick unaffected)
 
-        //m_turn = move.x;
-        m_turn = Mathf.SmoothStep(0.0f, 1.0f, Mathf.Abs(move.x)) * ((move.x >= 0.0f)?1.0f:-1.0f); // For animator        
+        m_tilt = Mathf.Lerp(m_tilt, move.x, m_tiltLerpRate);
+        m_turn = Mathf.SmoothStep(0.0f, 1.0f, Mathf.Abs(m_tilt)) * ((m_tilt >= 0.0f) ? 1.0f : -1.0f);     
 
         //Player relative movement
         Vector3 move3d = new Vector3(move.x, 0.0f, move.y).normalized;
         move3d = transform.rotation * move3d;
-
-        //Add camera relativity (a bit smoother, but causes issues with camera intersections steering the player...)       
-        //Vector3 camDir = transform.InverseTransformDirection(Vector3.ProjectOnPlane(m_camera.transform.forward, transform.up).normalized);        
-        //Quaternion camRot = Quaternion.LookRotation(camDir);       
-        //move3d = camRot * move3d;
         
         m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.y * (m_speedMod * m_iceMod * m_staggerMod), 3.5f * Time.deltaTime);
 
@@ -918,5 +918,15 @@ public class PlayerController : MonoBehaviour
         //Debug.DrawLine(transform.position, transform.position + v, Color.blue);
         //Debug.DrawLine(transform.position, transform.position + m_playerRB.velocity, Color.red);
         //Time.timeScale = 0.0f;
+    }
+
+    /*public void SetTiltLerpRate (float rate)
+    {
+        PlayerPrefs.SetFloat("LerpTiltRate", rate);
+    }*/
+
+    public float GetTiltLerpRate()
+    {
+        return PlayerPrefs.GetFloat("LerpTiltRate", 1.0f);
     }
 }

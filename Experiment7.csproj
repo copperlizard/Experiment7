@@ -125,6 +125,7 @@
     <Compile Include="Assets\_Scripts\BossCannonBall.cs" />
     <Compile Include="Assets\_Scripts\BossShield.cs" />
     <Compile Include="Assets\_Scripts\BounceBox.cs" />
+    <Compile Include="Assets\_Scripts\CallScrollBarScroll.cs" />
     <Compile Include="Assets\_Scripts\CameraController.cs" />
     <Compile Include="Assets\_Scripts\CameraInput.cs" />
     <Compile Include="Assets\_Scripts\CameraRenderDepth.cs" />
@@ -155,6 +156,7 @@
     <Compile Include="Assets\_Scripts\PlayerShield.cs" />
     <Compile Include="Assets\_Scripts\ProjectOnLayer.cs" />
     <Compile Include="Assets\_Scripts\QuitButton.cs" />
+    <Compile Include="Assets\_Scripts\ScrollBarScroller.cs" />
     <Compile Include="Assets\_Scripts\SlowBall.cs" />
     <Compile Include="Assets\_Scripts\SlowBallTriggerZone.cs" />
     <Compile Include="Assets\_Scripts\SpeedUpPickUp.cs" />
@@ -241,7 +243,6 @@
     <None Include="Assets\_Shaders\01_KickShieldShader.shader" />
     <None Include="Assets\_Shaders\01_PlaneIndicatorShader.shader" />
     <None Include="Assets\_Shaders\01_ShieldShader.shader" />
-    <None Include="Assets\_Shaders\01_SpeedImageEffectShader.shader" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />

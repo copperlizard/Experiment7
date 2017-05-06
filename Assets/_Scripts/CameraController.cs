@@ -17,6 +17,8 @@ public class CameraController : MonoBehaviour
     [SerializeField]
     private Vector3 /*m_boomVector = new Vector3(0.0f, 2.5f, -5.0f),*/ m_lookOffset = new Vector3(0.0f, 2.0f, 0.0f);
 
+    private Vector2 m_move;
+
     [SerializeField]
     [Range(-180.0f, 0.0f)]
     private float m_followDistance = 5.6f, m_defTiltAngle = 26.6f, m_tiltMin = -180.0f, m_panMin = -180.0f;
@@ -50,6 +52,16 @@ public class CameraController : MonoBehaviour
             else
             {
                 m_playerRB = m_player.GetComponent<Rigidbody>();
+                if (m_playerRB == null)
+                {
+                    Debug.Log("m_playerRB not found!");
+                }
+
+                m_playerController = m_player.GetComponent<PlayerController>();
+                if (m_playerController == null)
+                {
+                    Debug.Log("m_playerController not found!");
+                }
             }
         }
         else
@@ -82,7 +94,9 @@ public class CameraController : MonoBehaviour
 
     private void ChasePlayer ()
     {
-        Vector3 tarPos = m_player.transform.position + m_player.transform.rotation * (Quaternion.Euler(m_tilt, m_pan, 0.0f) * Quaternion.Euler(m_defTiltAngle, 0.0f, 0.0f) * (new Vector3(0.0f, 0.0f, -m_followDistance * Mathf.Max(0.5f, (1.0f - m_playerController.GetSpeed() / m_playerController.GetMaxSpeed())))));
+        float speed = m_playerController.GetSpeed() / m_playerController.GetMaxSpeed();
+        float moveL = m_move.magnitude;
+        Vector3 tarPos = m_player.transform.position + m_player.transform.rotation * (Quaternion.Euler(m_tilt, m_pan, 0.0f) * Quaternion.Euler(m_defTiltAngle * (1.0f + (speed - moveL)), 0.0f, 0.0f) * (new Vector3(0.0f, 0.0f, -m_followDistance * Mathf.Max(0.5f, (1.0f - (speed - moveL))))));
         Vector3 lookTar = m_player.transform.position + m_player.transform.rotation * m_lookOffset;
 
         RaycastHit hit;
@@ -132,11 +146,13 @@ public class CameraController : MonoBehaviour
 
         m_motionBlur.blurAmount = m_playerRB.velocity.magnitude / 90.0f;
 
-        Camera.main.fieldOfView = Mathf.Lerp(Camera.main.fieldOfView, 60.0f + 30.0f * Mathf.Min(1.0f, (m_playerController.GetSpeed() / m_playerController.GetMaxSpeed())), 3.0f * Time.deltaTime);
+        Camera.main.fieldOfView = Mathf.Lerp(Camera.main.fieldOfView, 60.0f + 30.0f * Mathf.Min(1.0f, (speed)), 3.0f * Time.deltaTime);
     }
 
     public void PanTilt (Vector2 move)
     {
+        m_move = move;
+
         float pan = (move.x >= 0.0f)? move.x * m_panMax : move.x * m_panMin, tilt = (move.y >= 0.0f) ? move.y * m_tiltMax : move.y * m_tiltMin;
 
         m_pan = Mathf.Lerp(m_pan, pan, 3.0f * Time.deltaTime);

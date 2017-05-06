@@ -10,8 +10,8 @@ public class AudioManager : MonoBehaviour
     private AudioMixer m_mainMixer;
 
     [SerializeField]
-    private Slider m_masterVolumeSlider, m_musicVolumdeSlider, m_SFXVolumeSlider, m_footStepsVolumeSlider;
-
+    private Slider m_masterVolumeSlider, m_musicVolumdeSlider, m_SFXVolumeSlider, m_footStepsVolumeSlider, m_turnSensitivitySlider;
+    
     // Use this for initialization
 	void Start ()
     {
@@ -40,10 +40,16 @@ public class AudioManager : MonoBehaviour
             Debug.Log("m_footStepsVolumeSlider not assigned!");
         }
 
+        if (m_turnSensitivitySlider == null)
+        {
+            Debug.Log("m_turnSensitivitySlider not assigned!");
+        }
+        
         m_masterVolumeSlider.value = GetMasterVolume();
         m_musicVolumdeSlider.value = GetMusicVolume();
         m_SFXVolumeSlider.value = GetSFXVolume();
         m_footStepsVolumeSlider.value = GetFootStepVolume();
+        m_turnSensitivitySlider.value = GetTiltLerpRate();
 
         m_mainMixer.SetFloat("MasterVolume", GetMasterVolume());
         m_mainMixer.SetFloat("MusicVolume", GetMusicVolume());
@@ -107,5 +113,15 @@ public class AudioManager : MonoBehaviour
     {
         //Debug.Log("vol == " + vol.ToString());
         return PlayerPrefs.GetFloat("FootStepsVolume", -2.0f);
+    }
+
+    public void SetTiltLerpRate(float rate)
+    {
+        PlayerPrefs.SetFloat("LerpTiltRate", rate);
+    }
+
+    public float GetTiltLerpRate()
+    {
+        return PlayerPrefs.GetFloat("LerpTiltRate", 1.0f);
     }
 }
