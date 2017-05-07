@@ -151,6 +151,8 @@ public class PlayerInput : MonoBehaviour
         {
             m_playerController.Shield(false);
         }
+
+        m_playerController.Sprint(Input.GetButton("Button3"));
     }
 
     private void GetXBoxInput ()
@@ -225,6 +227,8 @@ public class PlayerInput : MonoBehaviour
         {
             m_playerController.Shield(false);
         }
+
+        m_playerController.Sprint(Input.GetButton("Button3"));
     }
 
     private IEnumerator ConfirmBack ()

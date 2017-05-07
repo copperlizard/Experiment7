@@ -6,9 +6,10 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]
-    private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_airDashSpeed = 30.0f, 
-        m_dashDuration = 1.0f, m_kickDuration = 3.0f, m_sideStepDuration = 0.5f, m_groundCheckDist = 0.25f, 
-        m_minFlightHeight = 1.0f, m_flightTransitionRate = 20.0f, m_runCycleLegOffset = 0.0f, m_shieldBreakRecoverTime = 0.25f;
+    private float m_maxSpeed = 20.0f, m_turnSpeed = 5.0f, m_jumpSpeed = 10.0f, m_sprintSpeedModMax, 
+        m_sprintLerpRate, m_airDashSpeed = 30.0f, m_dashDuration = 1.0f, m_kickDuration = 3.0f, 
+        m_sideStepDuration = 0.5f, m_groundCheckDist = 0.25f, m_minFlightHeight = 1.0f, m_flightTransitionRate = 20.0f, 
+        m_runCycleLegOffset = 0.0f, m_shieldBreakRecoverTime = 0.25f;
 
     [SerializeField]
     private GameObject m_playerShield, m_playerKickShield;
@@ -36,11 +37,13 @@ public class PlayerController : MonoBehaviour
 
     private float m_turn = 0.0f, m_jumpCharge = 0.0f, m_speed = 0.0f, m_sideStep = 0.0f, 
         m_flying = 0.0f, m_airDashes = 3.0f, m_shieldEnergy = 1.0f, m_speedMod = 1.0f, 
-        m_iceMod = 1.0f, m_staggerMod = 1.0f, m_tilt = 0.0f, m_tiltLerpRate = 0.0f;
+        m_iceMod = 1.0f, m_sprintSpeedMod = 0.0f, m_staggerMod = 1.0f, m_tilt = 0.0f, 
+        m_tiltLerpRate = 0.0f;
 
     private bool m_grounded = true, m_airDashing = false, m_airDashCancel = false, m_stalled = false,
         m_shielding = false, m_freeFly = false, m_sideStepping = false, m_kicking = false, 
-        m_groundCheckSuspended = false, m_jumpPad = false, m_bounce = false, m_shieldBreak = false;
+        m_groundCheckSuspended = false, m_jumpPad = false, m_bounce = false, m_shieldBreak = false,
+        m_sprint = false, m_sprinting = false;
 
 	// Use this for initialization
 	void Start ()
@@ -113,8 +116,11 @@ public class PlayerController : MonoBehaviour
 	
 	// Update is called once per frame
 	void Update ()
-    {        
-        m_airDashes = Mathf.Min(3.0f, m_airDashes + 0.1f * Time.deltaTime);
+    {   
+        if (!m_sprinting)
+        {
+            m_airDashes = Mathf.Min(3.0f, m_airDashes + 0.1f * Time.deltaTime);
+        }
 
         if (!m_shielding && !m_shieldBreak)
         {
@@ -128,6 +134,7 @@ public class PlayerController : MonoBehaviour
         m_playerAnimator.SetFloat("Falling", Mathf.Lerp(0.0f, transform.InverseTransformVector(m_playerRB.velocity).y, 1.0f - m_flying));
         m_playerAnimator.SetFloat("JumpCharge", m_jumpCharge * (1.0f - Mathf.InverseLerp(0.0f, 0.2f, Mathf.Abs(m_speed) / m_maxSpeed)));
         m_playerAnimator.SetFloat("Flying", m_flying);
+        m_playerAnimator.SetFloat("Sprinting", m_sprintSpeedMod / m_sprintSpeedModMax);
         m_playerAnimator.SetBool("Grounded", m_grounded);
 
         m_playerAnimator.speed = 1.0f + Mathf.SmoothStep(0.75f, 1.0f, m_speed);
@@ -302,7 +309,7 @@ public class PlayerController : MonoBehaviour
         Vector3 move3d = new Vector3(move.x, 0.0f, move.y).normalized;
         move3d = transform.rotation * move3d;
         
-        m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.y * (m_speedMod * m_iceMod * m_staggerMod), 3.5f * Time.deltaTime);
+        m_speed = Mathf.Lerp(m_speed, m_maxSpeed * move.y * ((m_speedMod + m_sprintSpeedMod) * m_iceMod * m_staggerMod), 3.5f * Time.deltaTime);
 
         if (m_speed < 0.1f && m_speed > -0.1f)
         {
@@ -676,6 +683,71 @@ public class PlayerController : MonoBehaviour
             m_SFXsource.PlayOneShot(m_airDashSound);
             m_playerRB.velocity += jumpV * m_jumpSpeed * m_jumpCharge * 2.0f;
         }
+    }
+
+    public void Sprint (bool state)
+    {
+        m_sprint = state;
+
+        if (m_airDashes <= 0.05f || !m_grounded)
+        {
+            m_sprint = false;
+            return;
+        }
+        else if (m_sprint && !m_sprinting)
+        {
+            StartCoroutine(Sprinting());
+        }
+    }
+
+    private IEnumerator Sprinting ()
+    {
+        m_sprinting = true;
+
+        while (m_sprintSpeedMod < m_sprintSpeedModMax && m_sprint && m_speed > 0.0f)
+        {
+            m_sprintSpeedMod = Mathf.Lerp(m_sprintSpeedMod, m_sprintSpeedModMax, m_sprintLerpRate * Time.deltaTime);
+            if (m_sprintSpeedMod > m_sprintSpeedModMax - 0.01f)
+            {
+                m_sprintSpeedMod = m_sprintSpeedModMax;
+            }
+
+            m_airDashes = Mathf.Max(0.0f, m_airDashes - 0.5f * Time.deltaTime);
+
+            if (!m_grounded)
+            {
+                m_sprint = false;
+            }
+
+            yield return null;
+        }
+
+        while (m_sprint && m_airDashes > 0.0f && m_speed > 0.0f)
+        {
+            m_airDashes = Mathf.Max(0.0f, m_airDashes - 0.5f * Time.deltaTime);
+
+            if (!m_grounded)
+            {
+                m_sprint = false;
+            }
+
+            yield return null;           
+        }
+
+        while (m_sprintSpeedMod > 0.0f)
+        {
+            m_sprintSpeedMod = Mathf.Lerp(m_sprintSpeedMod, 0.0f, m_sprintLerpRate * Time.deltaTime);
+            if (m_sprintSpeedMod < 0.01f)
+            {
+                m_sprintSpeedMod = 0.0f;
+            }
+
+            yield return null;
+        }
+
+        yield return null;
+
+        m_sprinting = false;
     }
 
     public void Shield (bool state)
