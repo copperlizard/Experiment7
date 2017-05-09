@@ -24,12 +24,11 @@ public class PlayerController : MonoBehaviour
 
     private GameManager m_gameManager;
 
-    private AudioSource m_footStepsSoundEffectSource;
-    private AudioSource m_SFXsource;
+    private AudioSource m_footStepsSFXSource, m_SFXsource, m_sprintSFXsource;
 
     private Rigidbody m_playerRB;
 
-    private ParticleSystem m_dashParticles;    
+    private ParticleSystem m_dashParticles, m_sprintParticles;    
     
     private RaycastHit m_groundAt;
 
@@ -69,8 +68,8 @@ public class PlayerController : MonoBehaviour
             Debug.Log("m_playerRB not found!");
         }
 
-        m_footStepsSoundEffectSource = GetComponents<AudioSource>()[0];
-        if (m_footStepsSoundEffectSource == null)
+        m_footStepsSFXSource = GetComponents<AudioSource>()[0];
+        if (m_footStepsSFXSource == null)
         {
             Debug.Log("m_footStepsSoundEffectSource not found!");
         }
@@ -105,11 +104,25 @@ public class PlayerController : MonoBehaviour
             Debug.Log("m_gameManager not found!");
         }
 
-        m_dashParticles = GetComponentInChildren<ParticleSystem>();
+        m_dashParticles = GetComponentsInChildren<ParticleSystem>()[0];
         if (m_dashParticles == null)
         {
             Debug.Log("m_dashParticles not found!");
         }
+
+        m_sprintParticles = GetComponentsInChildren<ParticleSystem>()[1];
+        if (m_sprintParticles == null)
+        {
+            Debug.Log("m_dashParticles not found!");
+        }
+        else
+        {
+            m_sprintSFXsource = m_sprintParticles.GetComponent<AudioSource>();
+            if (m_sprintSFXsource == null)
+            {
+                Debug.Log("m_dashParticles not found!");
+            }
+        }            
 
         m_tiltLerpRate = GetTiltLerpRate();
     }
@@ -152,11 +165,11 @@ public class PlayerController : MonoBehaviour
         }
 
         //Foot sounds
-        if ((runCycle <= 0.1f || (runCycle >= 0.45f && runCycle <= 0.55f)) && !m_footStepsSoundEffectSource.isPlaying && m_grounded && !m_gameManager.IsPaused())
+        if ((runCycle <= 0.1f || (runCycle >= 0.45f && runCycle <= 0.55f)) && !m_footStepsSFXSource.isPlaying && m_grounded && !m_gameManager.IsPaused())
         {
-            m_footStepsSoundEffectSource.pitch = Random.Range(0.9f, 1.1f);
+            m_footStepsSFXSource.pitch = Random.Range(0.9f, 1.1f);
             //m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, Mathf.Lerp(0.0f, 1.0f, m_playerRB.velocity.magnitude));
-            m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, Mathf.Abs(m_speed / m_maxSpeed));
+            m_footStepsSFXSource.PlayOneShot(m_footStepsSFXSource.clip, Mathf.Abs(m_speed / m_maxSpeed));
             //m_footStepsSoundEffectSource.PlayOneShot(m_footStepsSoundEffectSource.clip, 1.0f);
         }
 
@@ -703,10 +716,12 @@ public class PlayerController : MonoBehaviour
     private IEnumerator Sprinting ()
     {
         m_sprinting = true;
+        m_sprintParticles.Play();
 
         while (m_sprintSpeedMod < m_sprintSpeedModMax && m_sprint && m_speed > 0.0f)
         {
             m_sprintSpeedMod = Mathf.Lerp(m_sprintSpeedMod, m_sprintSpeedModMax, m_sprintLerpRate * Time.deltaTime);
+            m_sprintSFXsource.volume = m_sprintSpeedMod / m_sprintSpeedModMax;
             if (m_sprintSpeedMod > m_sprintSpeedModMax - 0.01f)
             {
                 m_sprintSpeedMod = m_sprintSpeedModMax;
@@ -734,9 +749,12 @@ public class PlayerController : MonoBehaviour
             yield return null;           
         }
 
+        m_sprintParticles.Stop();
+
         while (m_sprintSpeedMod > 0.0f)
         {
             m_sprintSpeedMod = Mathf.Lerp(m_sprintSpeedMod, 0.0f, m_sprintLerpRate * Time.deltaTime);
+            m_sprintSFXsource.volume = m_sprintSpeedMod / m_sprintSpeedModMax;
             if (m_sprintSpeedMod < 0.01f)
             {
                 m_sprintSpeedMod = 0.0f;
@@ -746,7 +764,7 @@ public class PlayerController : MonoBehaviour
         }
 
         yield return null;
-
+        
         m_sprinting = false;
     }
 
