@@ -83,6 +83,7 @@ public class GameManager : MonoBehaviour
         m_paused = true;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        
         m_pauseMenuAnimator.SetBool("visible", true);
 
         Time.timeScale = 0.0f;

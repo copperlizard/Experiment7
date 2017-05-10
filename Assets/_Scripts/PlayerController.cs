@@ -283,27 +283,24 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
-
-        //Debug.DrawRay(m_groundAt.point, m_groundAt.normal, Color.green);
-
+        
         m_groundParallel = -Vector3.Cross(Vector3.Cross(transform.forward, m_groundAt.normal), m_groundAt.normal);
-
-        //Debug.DrawRay(m_groundAt.point, alignedForward, Color.blue);
         
         Quaternion alignedRot = Quaternion.LookRotation(m_groundParallel, m_groundAt.normal);
 
         float dif = Quaternion.Angle(transform.rotation, alignedRot);
 
-        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, (1.0f + (dif * 0.25f)) * Time.deltaTime);
+        //transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, (1.0f + (dif * 0.25f)) * Time.deltaTime);
+        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, (dif / 90.0f));
 
-        Vector3 toGround = m_groundAt.point - transform.position;       
-        
+
+        Physics.Raycast(transform.position + transform.up * 0.5f, -transform.up, out m_groundAt, m_groundCheckDist + 0.5f, LayerMask.NameToLayer("PlayerBody"), QueryTriggerInteraction.Ignore);
+
+        Vector3 toGround = m_groundAt.point - transform.position;
         if (toGround.magnitude > 0.005f) // Lift player out of the ground!
         {
-            transform.position = m_groundAt.point;
-        }        
-
-        //Debug.DrawLine(transform.position, transform.position + toGround, Color.blue);
+            transform.position = Vector3.Lerp(transform.position, m_groundAt.point, (toGround.magnitude / 0.005f) / 3.0f);
+        } 
     }
 
     public void Move (Vector2 move)
