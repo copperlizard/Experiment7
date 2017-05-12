@@ -288,13 +288,13 @@ public class PlayerController : MonoBehaviour
         
         Quaternion alignedRot = Quaternion.LookRotation(m_groundParallel, m_groundAt.normal);
 
-        float dif = Quaternion.Angle(transform.rotation, alignedRot);
+        //float dif = Quaternion.Angle(transform.rotation, alignedRot);
 
         //transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, (1.0f + (dif * 0.25f)) * Time.deltaTime);
-        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, (dif / 90.0f));
+        transform.rotation = Quaternion.Lerp(transform.rotation, alignedRot, 0.15f);
+        //transform.rotation = alignedRot;
 
-
-        Physics.Raycast(transform.position + transform.up * 0.5f, -transform.up, out m_groundAt, m_groundCheckDist + 0.5f, LayerMask.NameToLayer("PlayerBody"), QueryTriggerInteraction.Ignore);
+        //Physics.Raycast(transform.position + transform.up * 0.5f, -transform.up, out m_groundAt, m_groundCheckDist + 0.5f, LayerMask.NameToLayer("PlayerBody"), QueryTriggerInteraction.Ignore);
 
         Vector3 toGround = m_groundAt.point - transform.position;
         if (toGround.magnitude > 0.005f) // Lift player out of the ground!

@@ -38,11 +38,34 @@ public class BounceBox : MonoBehaviour
 		
 	}
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "Player" && !m_playerBounced)
+        {
+            m_playerController.Bounce(Vector3.up, m_bounceForce);
+            m_playerBounced = true;
+
+            StartCoroutine(AnimateBounce());
+        }
+        else if (other.tag != "Player" && other.attachedRigidbody != null)
+        {
+            StartCoroutine(AnimateBounce());
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.tag == "Player" && m_playerBounced)
+        {
+            StartCoroutine(BounceCooldown());
+        }
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.rigidbody != null && collision.gameObject.tag != "Player")
         {
-            collision.rigidbody.velocity += collision.contacts[0].normal * m_bounceForce;
+            //collision.rigidbody.velocity += collision.contacts[0].normal * m_bounceForce;
 
             StartCoroutine(AnimateBounce());
         }
