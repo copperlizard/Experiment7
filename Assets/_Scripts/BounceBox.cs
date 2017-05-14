@@ -38,7 +38,7 @@ public class BounceBox : MonoBehaviour
 		
 	}
 
-    private void OnTriggerEnter(Collider other)
+    /*private void OnTriggerEnter(Collider other)
     {
         if (other.tag == "Player" && !m_playerBounced)
         {
@@ -59,7 +59,7 @@ public class BounceBox : MonoBehaviour
         {
             StartCoroutine(BounceCooldown());
         }
-    }
+    }*/
 
     private void OnCollisionEnter(Collision collision)
     {

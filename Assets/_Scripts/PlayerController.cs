@@ -1014,6 +1014,6 @@ public class PlayerController : MonoBehaviour
 
     public float GetTiltLerpRate()
     {
-        return PlayerPrefs.GetFloat("LerpTiltRate", 1.0f);
+        return PlayerPrefs.GetFloat("LerpTiltRate", 0.5f);
     }
 }
