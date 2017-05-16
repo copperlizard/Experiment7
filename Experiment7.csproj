@@ -249,7 +249,6 @@
     <None Include="Assets\Resources\Standard Assets\Effects\ToonShading\Shaders\ToonLitOutline.shader" />
     <None Include="Assets\_Shaders\01_AdditiveProjector.shader" />
     <None Include="Assets\_Shaders\01_KickShieldShader.shader" />
-    <None Include="Assets\_Shaders\01_PlaneIndicatorShader.shader" />
     <None Include="Assets\_Shaders\01_ShieldShader.shader" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
