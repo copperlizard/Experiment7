@@ -4,7 +4,7 @@
 	{
 		_MainTex ("Texture", 2D) = "white" {}
 	}
-	SubShader
+		SubShader
 	{
 		// No culling or depth
 		Cull Off ZWrite Off ZTest Always
@@ -14,8 +14,10 @@
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
-			
+
 			#include "UnityCG.cginc"
+
+			uniform float _BlurStrength;
 
 			struct appdata
 			{
@@ -40,11 +42,7 @@
 			sampler2D _MainTex;
 
 			fixed4 frag (v2f IN) : SV_Target
-			{
-				// just invert the colors
-				//fixed4 col = tex2D(_MainTex, IN.uv);				
-				//col = 1 - col;
-
+			{	
 				float samples[10];
 				samples[0] = -0.08;
 				samples[1] = -0.05;
@@ -66,7 +64,7 @@
 
 				for (int i = 0; i < 10; i++)
 				{					;
-					sum += tex2D(_MainTex, IN.uv + dir * samples[i] * 1.0); //+ fixed2(0.5, 0.5)
+					sum += tex2D(_MainTex, IN.uv + dir * samples[i] * 0.5); 
 				}
 				
 				sum *= 1.0 / 11.0;
@@ -74,7 +72,9 @@
 				float t = dist * 2.2;
 				t = clamp(t, 0.0, 1.0);
 
-				return lerp(color, sum, t);
+				t = smoothstep(0.15, 0.5, t);
+
+				return lerp(color, sum, t * _BlurStrength);
 			}
 			ENDCG
 		}

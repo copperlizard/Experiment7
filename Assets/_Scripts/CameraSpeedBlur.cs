@@ -26,9 +26,20 @@ public class CameraSpeedBlur : MonoBehaviour
 		
 	}
 
-    private void OnRenderImage(RenderTexture source, RenderTexture destination)
+    private void OnRenderImage (RenderTexture source, RenderTexture destination)
     {
-        //m_material.SetFloat("_Blur", m_blur);
+        if (m_blur <= 0.0f)
+        {
+            return;
+        }
+        
         Graphics.Blit(source, destination, m_material);
+    }
+
+    public void SetBlurStrength (float blur)
+    {
+        m_blur = blur;
+
+        m_material.SetFloat("_BlurStrength", m_blur);
     }
 }

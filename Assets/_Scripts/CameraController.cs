@@ -14,6 +14,8 @@ public class CameraController : MonoBehaviour
 
     private MotionBlur m_motionBlur;
 
+    private CameraSpeedBlur m_radialBlur;
+
     [SerializeField]
     private Vector3 /*m_boomVector = new Vector3(0.0f, 2.5f, -5.0f),*/ m_lookOffset = new Vector3(0.0f, 2.0f, 0.0f);
 
@@ -84,6 +86,12 @@ public class CameraController : MonoBehaviour
         {
             Debug.Log("m_motionBlur not found!");
         }
+
+        m_radialBlur = GetComponent<CameraSpeedBlur>();
+        if (m_radialBlur == null) 
+        {
+            Debug.Log("m_radialBlur not found!");
+        }
     }
 	
 	// Update is called once per frame
@@ -145,6 +153,8 @@ public class CameraController : MonoBehaviour
         transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(lookTar - transform.position, m_player.transform.up), (20.0f + 20.0f * lerpMod) * Time.deltaTime);
 
         m_motionBlur.blurAmount = m_playerRB.velocity.magnitude / 90.0f;
+
+        m_radialBlur.SetBlurStrength(m_playerRB.velocity.magnitude / 90.0f);
 
         Camera.main.fieldOfView = Mathf.Lerp(Camera.main.fieldOfView, 60.0f + 30.0f * Mathf.Min(1.0f, (speed)), 3.0f * Time.deltaTime);
     }
